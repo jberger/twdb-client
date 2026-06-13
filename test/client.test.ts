@@ -40,3 +40,14 @@ describe('TwdbClient.login', () => {
     await expect(client.login('good', 'wrong')).rejects.toBeInstanceOf(AuthError);
   });
 });
+
+describe('TwdbClient pacing', () => {
+  it('spaces requests by at least minRequestIntervalMs', async () => {
+    server = await startMockServer();
+    const client = new TwdbClient({ baseUrl: server.url, minRequestIntervalMs: 80 });
+    await client.fetchHtml('/public');
+    await client.fetchHtml('/public');
+    const [t1, t2] = server.requestTimes;
+    expect(t2 - t1).toBeGreaterThanOrEqual(70); // ~80ms minus timer slack
+  });
+});
