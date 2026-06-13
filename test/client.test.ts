@@ -2,7 +2,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { startMockServer, type MockServer } from './helpers/mockServer.js';
 import { TwdbClient } from '../src/client.js';
-import { HttpError } from '../src/errors.js';
+import { HttpError, AuthError } from '../src/errors.js';
 
 let server: MockServer;
 afterEach(() => server?.close());
@@ -22,5 +22,21 @@ describe('TwdbClient.fetchHtml', () => {
     server = await startMockServer();
     const client = new TwdbClient({ baseUrl: server.url });
     await expect(client.fetchHtml('/missing')).rejects.toBeInstanceOf(HttpError);
+  });
+});
+
+describe('TwdbClient.login', () => {
+  it('logs in and reuses the session cookie for protected pages', async () => {
+    server = await startMockServer();
+    const client = new TwdbClient({ baseUrl: server.url });
+    await client.login('good', 'secret');
+    const dom = await client.fetchHtml('/dashboard');
+    expect(dom.at('title')?.text()).toBe('Dashboard');
+  });
+
+  it('throws AuthError on bad credentials', async () => {
+    server = await startMockServer();
+    const client = new TwdbClient({ baseUrl: server.url });
+    await expect(client.login('good', 'wrong')).rejects.toBeInstanceOf(AuthError);
   });
 });

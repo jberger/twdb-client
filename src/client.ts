@@ -1,6 +1,6 @@
 // src/client.ts
 import UserAgent from '@mojojs/user-agent';
-import { HttpError } from './errors.js';
+import { AuthError, HttpError } from './errors.js';
 
 export interface TwdbClientOptions {
   baseUrl: string;
@@ -20,6 +20,22 @@ export class TwdbClient {
       name: opts.userAgent ?? DEFAULT_UA,
       maxRedirects: 5,
     });
+  }
+
+  /**
+   * Authenticate. Posts the TWDB login form and follows the redirect. Success is
+   * detected by the absence of the login form in the resulting page (a re-rendered
+   * login form == failure). NOTE: refine this marker against the real login.php
+   * response during the slice-1 recon pass.
+   */
+  async login(username: string, password: string): Promise<void> {
+    const res = await this.#ua.post('/login.php', {
+      form: { username, passwd: password, commit: 'Sign In' },
+    });
+    const dom = await res.html();
+    if (dom.at('input[name="passwd"]')) {
+      throw new AuthError('TWDB login failed (check username/password)');
+    }
   }
 
   /** GET `path` and return its parsed HTML DOM (@mojojs/dom). Throws HttpError on non-2xx. */
