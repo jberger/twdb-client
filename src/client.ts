@@ -10,7 +10,7 @@ export interface TwdbClientOptions {
   userAgent?: string;
   /** Minimum ms between requests (politeness). Default 1000. */
   minRequestIntervalMs?: number;
-  /** passed to @mojojs/user-agent; null disables keep-alive — use in tests for speed */
+  /** passed to @mojojs/user-agent; null disables keep-alive -- use in tests for speed */
   keepAlive?: number | null;
 }
 
@@ -23,7 +23,7 @@ interface UndiciTransportLike {
   cookieJar: CookieJar | null;
 }
 
-const DEFAULT_UA = 'twdb-client/0.1 (+https://github.com/joelberger/twdb-client)';
+const DEFAULT_UA = 'twdb-client/0.1 (+github:jberger/twdb-client)';
 
 export class TwdbClient {
   #ua: UserAgent;

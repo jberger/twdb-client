@@ -1,4 +1,4 @@
-// scripts/recon.ts — usage: TWDB_* env set, then `npm run recon -- <path> <outFile> [--login]`
+// scripts/recon.ts -- usage: TWDB_* env set, then `npm run recon -- <path> <outFile> [--login]`
 import { TwdbClient } from '../src/client.js';
 import { dumpPage } from '../src/recon.js';
 
