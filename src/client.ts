@@ -1,6 +1,6 @@
 // src/client.ts
 import UserAgent from '@mojojs/user-agent';
-import { CookieJar } from 'tough-cookie';
+import { CookieJar, type SerializedCookieJar } from 'tough-cookie';
 import { AuthError, HttpError } from './errors.js';
 
 export interface TwdbClientOptions {
@@ -11,7 +11,7 @@ export interface TwdbClientOptions {
 }
 
 export interface SerializedSession {
-  cookies: ReturnType<CookieJar['serializeSync']>;
+  cookies: SerializedCookieJar;
 }
 
 /** Internal shape of httpTransport at runtime (UndiciTransport). */
@@ -92,7 +92,9 @@ export class TwdbClient {
   exportSession(): SerializedSession {
     const jar = this.#transport().cookieJar;
     if (!jar) throw new Error('Cookie jar not available');
-    return { cookies: jar.serializeSync() };
+    const cookies = jar.serializeSync();
+    if (!cookies) throw new Error('Cookie jar serialization failed');
+    return { cookies };
   }
 
   /** Rebuild a client from a previously exported session. */
