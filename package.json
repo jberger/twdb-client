@@ -1,0 +1,25 @@
+{
+  "name": "@joelberger/twdb-client",
+  "version": "0.1.0",
+  "description": "A polite, typed client for the Typewriter Database (typewriterdatabase.com)",
+  "license": "MIT",
+  "type": "module",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "recon": "tsx scripts/recon.ts"
+  },
+  "dependencies": {
+    "@mojojs/user-agent": "^0.11.0",
+    "tough-cookie": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
