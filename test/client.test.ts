@@ -51,3 +51,17 @@ describe('TwdbClient pacing', () => {
     expect(t2 - t1).toBeGreaterThanOrEqual(70); // ~80ms minus timer slack
   });
 });
+
+describe('TwdbClient session export/import', () => {
+  it('restores a logged-in session without logging in again', async () => {
+    server = await startMockServer();
+    const a = new TwdbClient({ baseUrl: server.url, minRequestIntervalMs: 0 });
+    await a.login('good', 'secret');
+
+    const session = a.exportSession();
+    const b = TwdbClient.fromSession(session, { baseUrl: server.url, minRequestIntervalMs: 0 });
+
+    const dom = await b.fetchHtml('/dashboard');
+    expect(dom.at('title')?.text()).toBe('Dashboard'); // cookie carried over, no login
+  });
+});

@@ -1,5 +1,6 @@
 // src/client.ts
 import UserAgent from '@mojojs/user-agent';
+import { CookieJar } from 'tough-cookie';
 import { AuthError, HttpError } from './errors.js';
 
 export interface TwdbClientOptions {
@@ -7,6 +8,15 @@ export interface TwdbClientOptions {
   userAgent?: string;
   /** Minimum ms between requests (politeness). Default 1000. */
   minRequestIntervalMs?: number;
+}
+
+export interface SerializedSession {
+  cookies: ReturnType<CookieJar['serializeSync']>;
+}
+
+/** Internal shape of httpTransport at runtime (UndiciTransport). */
+interface UndiciTransportLike {
+  cookieJar: CookieJar | null;
 }
 
 const DEFAULT_UA = 'twdb-client/0.1 (+https://github.com/joelberger/twdb-client)';
@@ -39,6 +49,11 @@ export class TwdbClient {
     return result;
   }
 
+  /** Access the underlying undici transport's cookie jar. */
+  #transport(): UndiciTransportLike {
+    return this.#ua.httpTransport as unknown as UndiciTransportLike;
+  }
+
   /**
    * Authenticate. Posts the TWDB login form and follows the redirect. Success is
    * detected by the absence of the login form in the resulting page (a re-rendered
@@ -62,5 +77,28 @@ export class TwdbClient {
       throw new HttpError(`GET ${path} -> ${res.statusCode}`, res.statusCode);
     }
     return res.html();
+  }
+
+  /** GET `path` and return the raw response body text. Throws HttpError on non-2xx. */
+  async fetchText(path: string): Promise<string> {
+    const res = await this.#send(() => this.#ua.get(path));
+    if (!res.isSuccess) {
+      throw new HttpError(`GET ${path} -> ${res.statusCode}`, res.statusCode);
+    }
+    return res.text();
+  }
+
+  /** Export the live cookie jar so a caller can persist the session (no password). */
+  exportSession(): SerializedSession {
+    const jar = this.#transport().cookieJar;
+    if (!jar) throw new Error('Cookie jar not available');
+    return { cookies: jar.serializeSync() };
+  }
+
+  /** Rebuild a client from a previously exported session. */
+  static fromSession(session: SerializedSession, opts: TwdbClientOptions): TwdbClient {
+    const client = new TwdbClient(opts);
+    (client.#transport()).cookieJar = CookieJar.deserializeSync(session.cookies);
+    return client;
   }
 }
