@@ -13,7 +13,7 @@ afterEach(() => server?.close());
 describe('dumpPage', () => {
   it('fetches a page and writes its raw HTML to a file', async () => {
     server = await startMockServer();
-    const client = new TwdbClient({ baseUrl: server.url, minRequestIntervalMs: 0 });
+    const client = new TwdbClient({ baseUrl: server.url, minRequestIntervalMs: 0, keepAlive: null });
     const out = join(tmpdir(), `twdb-recon-${Date.now()}.html`);
 
     await dumpPage(client, '/public', out);

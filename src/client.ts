@@ -1,13 +1,17 @@
 // src/client.ts
-import UserAgent from '@mojojs/user-agent';
+import UserAgent, { type NodeResponse } from '@mojojs/user-agent';
 import { CookieJar, type SerializedCookieJar } from 'tough-cookie';
 import { AuthError, HttpError } from './errors.js';
+
+type MojoDOM = Awaited<ReturnType<NodeResponse['html']>>;
 
 export interface TwdbClientOptions {
   baseUrl: string;
   userAgent?: string;
   /** Minimum ms between requests (politeness). Default 1000. */
   minRequestIntervalMs?: number;
+  /** passed to @mojojs/user-agent; null disables keep-alive — use in tests for speed */
+  keepAlive?: number | null;
 }
 
 export interface SerializedSession {
@@ -32,6 +36,7 @@ export class TwdbClient {
       baseURL: opts.baseUrl,
       name: opts.userAgent ?? DEFAULT_UA,
       maxRedirects: 5,
+      keepAlive: opts.keepAlive,
     });
     this.#minInterval = opts.minRequestIntervalMs ?? 1000;
   }
@@ -71,7 +76,7 @@ export class TwdbClient {
   }
 
   /** GET `path` and return its parsed HTML DOM (@mojojs/dom). Throws HttpError on non-2xx. */
-  async fetchHtml(path: string) {
+  async fetchHtml(path: string): Promise<MojoDOM> {
     const res = await this.#send(() => this.#ua.get(path));
     if (!res.isSuccess) {
       throw new HttpError(`GET ${path} -> ${res.statusCode}`, res.statusCode);
@@ -92,9 +97,8 @@ export class TwdbClient {
   exportSession(): SerializedSession {
     const jar = this.#transport().cookieJar;
     if (!jar) throw new Error('Cookie jar not available');
-    const cookies = jar.serializeSync();
-    if (!cookies) throw new Error('Cookie jar serialization failed');
-    return { cookies };
+    // serializeSync() is typed as returning `undefined` but never does in practice
+    return { cookies: jar.serializeSync()! };
   }
 
   /** Rebuild a client from a previously exported session. */

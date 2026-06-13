@@ -12,7 +12,8 @@ const baseUrl = process.env.TWDB_BASE_URL ?? 'https://typewriterdatabase.com';
 const client = new TwdbClient({ baseUrl }); // default UA + 1s pacing = polite
 
 if (flags.includes('--login')) {
-  const u = process.env.TWDB_USERNAME, p = process.env.TWDB_PASSWORD;
+  const u = process.env.TWDB_USERNAME;
+  const p = process.env.TWDB_PASSWORD;
   if (!u || !p) { console.error('set TWDB_USERNAME and TWDB_PASSWORD'); process.exit(1); }
   await client.login(u, p);
 }
