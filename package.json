@@ -10,7 +10,8 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "recon": "tsx scripts/recon.ts"
+    "recon": "tsx scripts/recon.ts",
+    "recon:machine": "tsx scripts/recon-machine.ts"
   },
   "dependencies": {
     "@mojojs/user-agent": "^0.11.0",

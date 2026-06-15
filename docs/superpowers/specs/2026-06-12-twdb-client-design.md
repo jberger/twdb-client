@@ -237,13 +237,11 @@ DT-side sync and the bulk CLI are separate downstream projects (own specs/plans)
 
 ## 15. Open questions — resolve during recon (slice 1)
 
-- **Links editor** (`typewriter_editor_links.php`): field names/shape for `setLinks` (esp. how a
-  YouTube URL is stored — single field? typed link rows?).
-- **Photo delete** endpoint (behind JS `confirmPhotoDelete(gp_id)`).
-- **Login-success detection** signal.
-- **Exact upload gate** (1000px hard reject? px vs. bytes?).
-- **How `models` populates per brand** (AJAX endpoint vs. server-rendered) and the
-  new-vs-existing-model dedup behavior.
+- **(RESOLVED 2026-06-15, see §16)** Links → `create.weblink` (typed `link_name`+`link_url` rows);
+  photo delete → `typewriter_photo_delete.php` (`confirmPhotoDelete(gp_id)`); login-success →
+  "Log Out"/username marker; `models` populate via AJAX `GET mfr.<catId>.model_list`.
+- **(STILL OPEN) Exact upload gate** (1000px hard reject? px vs. bytes?) — verify while building the
+  resizer. Also confirm the new-vs-existing-**model** dedup when a new `model` name collides.
 - **(RESOLVED 2026-06-15) `findMachine` key + `listMyMachines` source.** Both derive from the
   **public** export in §6. Match on **manufacturer + model + serial** (serial alone isn't unique
   across manufacturers). No login or scraping needed for existence checks.
@@ -251,3 +249,39 @@ DT-side sync and the bulk CLI are separate downstream projects (own specs/plans)
   image uploads (docs show string `content`); the cookie-jar **serialization** API for
   `exportSession`/`fromSession`; and that `@mojojs/dom`'s selector support covers our scraping
   (option lists, `img src`, traversal).
+
+## 16. Recon results (captured 2026-06-15, hunter 7773 / gallery 25748)
+
+Verified against live fixtures. Raw authenticated full-page captures are kept **local, not
+committed** (may carry account PII); minimal sanitized fragments will be extracted per test.
+
+- **Login success:** logged-in pages carry "Log Out" + the username; `login()`'s heuristic works.
+- **Create machine:** `POST typewriter_edit.php` (multipart), `id=0`. Fields: `site_id=1`,
+  `collection` (select, 3 opts), `cat_id` (brand select — **1067 server-rendered options** = the
+  brand list), `models` (existing model id, AJAX-populated) OR `model` (new model name, text),
+  `gallery_name` (year), `serial_no`, `gallery_desc` (textarea), `photo` (cover file),
+  `typesample` (file), `photo_wm` (checkbox=1), `gallery_active=1`. Submit "Create Gallery".
+- **Update machine:** SAME endpoint `POST typewriter_edit.php` with `id=<galleryId>`, reached via
+  the tabbed editor `typewriter_editor.php?id=N` (NOT `typewriter_edit.php?id=N`, which renders a
+  blank create form). Submit "Update Gallery". Existing values appear JS-populated, not in static HTML.
+- **Brand list:** scrape `cat_id` `<option>`s from the create form (name → id); one fetch, cache.
+- **Model list per brand:** `GET mfr.<catId>.model_list` (URL-rewritten; returns the `<option>`
+  list). [`mfr.<catId>.models_list` — plural — feeds a separate search widget.]
+- **Editor tabs:** Description `typewriter_editor.php?id=N`; Links `typewriter_editor_links.php?gallery_id=N`;
+  Gallery Photos `typewriter_editor_photos.php?gallery_id=N`; Re-ordering
+  `typewriter_editor_photos_ordering.php?gallery_id=N`. Public machine page: `see.<id>.typewriter`.
+- **Links:** the Links tab submits `POST create.weblink`: `sub_app=typewriter`, `sub_id=<galleryId>`,
+  `link_name`, `link_url` (generic typed rows; a YouTube link = name "YouTube" + url). Edit/delete
+  weblink endpoints not yet captured.
+- **Add photo:** `POST typewriter_photo_create.php`: `site_id`, `gallery_id`, `photo` (file),
+  `photo_desc` (textarea), `photo_wm` (checkbox), `photo_active` (checkbox).
+- **Edit/replace photo:** `POST typewriter_photo_edit.php`: `site_id`, `gp_id`, `gallery_id`,
+  optional `photo` (replace), `photo_desc`, `photo_wm`, `photo_active`. One form per photo on the
+  Gallery Photos tab → also the **`listMachinePhotos`** source (each carries its `gp_id`).
+- **Delete photo:** `typewriter_photo_delete.php` via JS `confirmPhotoDelete(<gp_id>)` (confirm exact
+  method/params when building). Ignore `typewriter_photo_multiupload.php` (the JS batch widget).
+- **Existence / list:** public `typewriter_list_ajax.php?hunter_search=<hunterId>[&output=csv]` (§6);
+  joelaberger = hunter 7773.
+
+**Still open (verify while building):** the exact upload-size gate behavior, new-vs-existing-model
+dedup, edit/delete-weblink endpoints, and the `@mojojs` specifics in §15.

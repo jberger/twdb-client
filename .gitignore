@@ -3,3 +3,5 @@
 .env
 *.tsbuildinfo
 .DS_Store
+# Raw authenticated recon captures (may contain account PII). Commit only sanitized/public fixtures.
+fixtures/raw/
