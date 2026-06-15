@@ -204,6 +204,32 @@ Optional pre-resizing in a consumer is unnecessary but harmless.
   store — DT and a directory-CLI are different policies, not one interface. Extract a shared
   helper later only if two real implementations prove the duplication.
 
+## 10a. Adoption of existing collections
+
+A generic, multi-user tool must assume a user arrives with a collection **already on TWDB** —
+forcing them to recreate it would be a fatal adoption barrier. The design handles this without
+over-building, by separating the two levels:
+
+- **Machines: auto-reconciled, never recreated.** `listMyMachines`/`findMachine` already match
+  existing galleries remotely (manufacturer + model + serial, via the public export). So on first
+  run the tool **links** local machines to their existing gallery ids and back-fills the ledger
+  automatically — a user with dozens of galleries does nothing. New machines are created; existing
+  ones are matched.
+- **Photos: additive by default, adoption opt-in.** Photos have no remote identity, so the default
+  is conservative: the tool **manages only the photos it uploads** and leaves a gallery's
+  pre-existing photos untouched. A user is productive immediately (push new machines/photos) with
+  zero reconciliation. Bringing *existing* photos under management is an explicit, one-time step,
+  offered at the effort level that fits: (a) manual mapping for a few; (b) **perceptual-hash
+  assisted, human-confirmed** matching for many (download gallery photos, rank candidates by
+  Hamming distance vs the resized DT/source images, user confirms — pHash is a *suggestion engine*,
+  never an unattended dedup key); (c) skip entirely and only manage net-new.
+
+**The ledger is population-agnostic.** An entry (`local item → gallery id / gp_id`) looks identical
+whether it came from a tool upload, an automatic machine-match, manual entry, or a confirmed pHash
+match. Adoption **policy lives in the consumer** (DT vs the CLI may differ); the library only ships
+the generic primitives (`findMachine`, `listMyMachines`, `listMachinePhotos`, `addPhoto → gp_id`)
+plus, later, an *optional* pHash helper — it never prescribes a store or a policy.
+
 ## 11. Errors & resilience
 
 Typed errors: `AuthError`, `TwdbValidationError` (TWDB rejected the form), `UploadTooLargeError`,
