@@ -153,6 +153,18 @@ interface MachineInput {
   **original filenames are NOT preserved.**
 - **Upload gate:** uploads must be **≤1000px** tall/wide; TWDB then reduces to **≤630px** (cover/
   gallery) and **≤550×300** (type sample).
+- **Hunter collection export (existence / idempotency), captured 2026-06-15:**
+  `GET typewriter_list_ajax.php?hunter_search=<hunterId>` → JSON (DataTables `aaData`; cells embed
+  HTML carrying the machine id + `mfr_search=<brandId>`). Add `&output=csv` for a clean
+  **TAB-delimited** table (despite the name): columns `id, hunter, status, typesample, serial,
+  year, manufacturer, model, twdb_url, image, images` (`images` = photo count). **Public — no
+  login.** `hunterId` is the numeric hunter id (joelaberger = 7773), distinct from the username.
+  `status` ∈ {My Collection, Parting Out, Sightings}. The library reports `status` **verbatim and
+  does not interpret it** — consumers own the mapping. Note TWDB has no dedicated *past /
+  formerly-owned* bucket, so `Sightings` is **ambiguous**: originally "spotted in the wild (not
+  owned)," but a hunter may repurpose it for past-collection machines. So don't hard-code
+  Sightings as not-owned; the DT sync (separate spec) decides how to map each TWDB status onto
+  DT's in-collection / past distinction.
 
 ## 7. Auth / session
 
@@ -181,8 +193,11 @@ Optional pre-resizing in a consumer is unnecessary but harmless.
 
 ## 10. Idempotency
 
-- **Machine-level → library, remote-derived.** `findMachine`/`listMyMachines` read TWDB's own
-  galleries (match by serial, or brand+model+serial). Check-before-create, no local state.
+- **Machine-level → library, remote-derived.** `findMachine`/`listMyMachines` read the user's own
+  galleries via the **public** export `typewriter_list_ajax.php?hunter_search=<hunterId>&output=csv`
+  (see §6). Match key = **manufacturer + model + serial** — serial alone is NOT unique across
+  manufacturers (e.g. a Royal "12" vs a Remington "12"). `status` column gives the collection.
+  Check-before-create, no local state, no HTML scraping.
 - **Photo-level → consumer-local.** TWDB renames files and exposes no content hash, so "have I
   uploaded this image" can't be derived remotely. Each consumer keeps its own ledger (DT: Payload
   DB; CLI: a `.twdb-sync.json` in the photo directory). The library does **not** prescribe a
@@ -229,8 +244,9 @@ DT-side sync and the bulk CLI are separate downstream projects (own specs/plans)
 - **Exact upload gate** (1000px hard reject? px vs. bytes?).
 - **How `models` populates per brand** (AJAX endpoint vs. server-rendered) and the
   new-vs-existing-model dedup behavior.
-- **`findMachine` matching key** — is serial reliably unique within a user's galleries, or is
-  brand+model+serial needed?
+- **(RESOLVED 2026-06-15) `findMachine` key + `listMyMachines` source.** Both derive from the
+  **public** export in §6. Match on **manufacturer + model + serial** (serial alone isn't unique
+  across manufacturers). No login or scraping needed for existence checks.
 - **`@mojojs/user-agent` specifics** — confirm `formData` accepts a **Buffer/stream** for binary
   image uploads (docs show string `content`); the cookie-jar **serialization** API for
   `exportSession`/`fromSession`; and that `@mojojs/dom`'s selector support covers our scraping
