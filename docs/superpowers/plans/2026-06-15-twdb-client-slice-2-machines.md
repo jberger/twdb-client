@@ -151,11 +151,13 @@ describe('resize', () => {
     const [w] = await dims((await resizeForGallery(await img(400, 300), 'x.jpg')).content);
     expect(w).toBe(400);
   });
-  it('bakes in EXIF orientation (rotated source comes out upright)', async () => {
-    // 400x200 landscape tagged orientation 6 (=90°) → must come out portrait once baked in
+  it('bakes in rotation AND strips EXIF (uploads must be EXIF-independent)', async () => {
+    // 400x200 landscape tagged orientation 6 (=90°) → must come out portrait, pixels baked, tag gone
     const tagged = await sharp(await img(400, 200)).withMetadata({ orientation: 6 }).jpeg().toBuffer();
-    const [w, h] = await dims((await resizeForGallery(tagged, 'r.jpg')).content);
-    expect(h).toBeGreaterThan(w); // proves .rotate() ran (without it, output stays landscape)
+    const out = (await resizeForGallery(tagged, 'r.jpg')).content;
+    const meta = await sharp(out).metadata();
+    expect(meta.height!).toBeGreaterThan(meta.width!); // .rotate() ran (else stays landscape)
+    expect([undefined, 1]).toContain(meta.orientation); // EXIF stripped → no tag to rely on
   });
   it('fits type samples within 550x300', async () => {
     const [w, h] = await dims((await resizeForTypeSample(await img(2000, 2000), 'ts.jpg')).content);

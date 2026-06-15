@@ -188,6 +188,14 @@ with no orientation tag to rescue it. In DT a crop path that omitted `.rotate()`
 path had it) shipped rotated images — so this is a per-path requirement, and each path must have an
 orientation **test** (feed an `orientation:6`-tagged source, assert the output comes out upright).
 
+**Decision — TWDB uploads are EXIF-independent.** We send **physically-rotated pixels with metadata
+stripped**: `.rotate()` bakes the rotation in, and sharp's `.toBuffer()` drops EXIF by default (never
+call `.withMetadata()`), so correct display never depends on TWDB honoring an orientation tag — it
+re-encodes and we don't trust its EXIF handling. This is deliberately **unlike DT**, which keeps
+EXIF-bearing originals (browsers honor EXIF and DT owns rendering). The resizer test asserts the
+output has **no** orientation tag (orientation `undefined`/`1`) in addition to upright dimensions, so
+EXIF-independence is a guarantee, not a sharp default we happen to inherit.
+
 ## 9. Politeness (baked into the library)
 
 - **Honest `User-Agent`**: `twdb-client/<version> (+<repo-url>; <contact>)`.
