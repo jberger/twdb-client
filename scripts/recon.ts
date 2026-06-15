@@ -2,6 +2,13 @@
 import { TwdbClient } from '../src/client.js';
 import { dumpPage } from '../src/recon.js';
 
+// Load credentials from .env if present (falls back to already-exported env vars).
+try {
+  process.loadEnvFile();
+} catch {
+  /* no .env file — rely on exported env */
+}
+
 const [path, outFile, ...flags] = process.argv.slice(2);
 if (!path || !outFile) {
   console.error('usage: npm run recon -- <path> <fixtures/out.html> [--login]');
