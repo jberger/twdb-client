@@ -121,6 +121,10 @@ export class UploadTooLargeError extends TwdbError {}
 Spec §8: gallery/cover ≤630px (longest side), type sample ≤550×300. `fit: 'inside'`,
 `withoutEnlargement: true` (never upscale; clears the ≤1000px upload gate).
 
+**EXIF orientation (mandatory — DT lesson, spec §8):** the resizer calls sharp's `.rotate()` FIRST to
+bake orientation into pixels. TWDB strips metadata, so skipping this publishes sideways images. This
+is tested below (the orientation case), and any future transform path (e.g. a crop) must do the same.
+
 - [ ] **Step 1: Add sharp** — `npm install sharp` (it is a real dependency, not dev).
 - [ ] **Step 2: Write a failing test** (generate a known oversized image with sharp, resize, assert bounds)
 
@@ -146,6 +150,12 @@ describe('resize', () => {
   it('does not upscale a small image', async () => {
     const [w] = await dims((await resizeForGallery(await img(400, 300), 'x.jpg')).content);
     expect(w).toBe(400);
+  });
+  it('bakes in EXIF orientation (rotated source comes out upright)', async () => {
+    // 400x200 landscape tagged orientation 6 (=90°) → must come out portrait once baked in
+    const tagged = await sharp(await img(400, 200)).withMetadata({ orientation: 6 }).jpeg().toBuffer();
+    const [w, h] = await dims((await resizeForGallery(tagged, 'r.jpg')).content);
+    expect(h).toBeGreaterThan(w); // proves .rotate() ran (without it, output stays landscape)
   });
   it('fits type samples within 550x300', async () => {
     const [w, h] = await dims((await resizeForTypeSample(await img(2000, 2000), 'ts.jpg')).content);

@@ -181,6 +181,13 @@ Manual resizing is the user's #1 barrier to using TWDB, and oversized uploads ar
 TWDB keeps anyway. `sharp` backend, default-on; raw-bytes escape hatch for odd runtimes.
 Optional pre-resizing in a consumer is unnecessary but harmless.
 
+**EXIF orientation (mandatory, learned the hard way in DT):** *every* image transform path must call
+sharp's `.rotate()` (auto-orient) to bake EXIF orientation into the pixels **before** resizing/
+cropping. TWDB **strips metadata** on upload, so an un-rotated transform publishes a sideways image
+with no orientation tag to rescue it. In DT a crop path that omitted `.rotate()` (while the resize
+path had it) shipped rotated images — so this is a per-path requirement, and each path must have an
+orientation **test** (feed an `orientation:6`-tagged source, assert the output comes out upright).
+
 ## 9. Politeness (baked into the library)
 
 - **Honest `User-Agent`**: `twdb-client/<version> (+<repo-url>; <contact>)`.
