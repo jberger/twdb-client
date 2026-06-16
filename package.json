@@ -4,8 +4,15 @@
   "description": "A polite, typed client for the Typewriter Database (typewriterdatabase.com)",
   "license": "MIT",
   "type": "module",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -15,6 +22,7 @@
   },
   "dependencies": {
     "@mojojs/user-agent": "^0.11.0",
+    "sharp": "^0.35.1",
     "tough-cookie": "^5.1.0"
   },
   "devDependencies": {
