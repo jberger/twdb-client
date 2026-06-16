@@ -30,7 +30,7 @@ export const parseModelOptions = (dom: DomLike): Model[] => options(dom, 'option
 
 // New gallery id/url from the create response: prefer the resolved/redirected URL, else any
 // <id>.typewriter anchor. (Confirm against a real create — see the Slice 2 plan, Task 8.)
-export function parseCreateResult(dom: DomLike, finalUrl: string): MachineRef | null {
+export function parseCreateResult(dom: DomLike, finalUrl = ''): MachineRef | null {
   const fromUrl = finalUrl.match(/(\d+)\.typewriter/);
   if (fromUrl) return { id: fromUrl[1], url: finalUrl };
   for (const a of dom.find('a')) {

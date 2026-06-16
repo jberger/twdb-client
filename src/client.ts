@@ -2,6 +2,8 @@
 import UserAgent, { type NodeResponse } from '@mojojs/user-agent';
 import { CookieJar, type SerializedCookieJar } from 'tough-cookie';
 import { AuthError, HttpError } from './errors.js';
+import { parseBrandOptions, parseModelOptions } from './parse.js';
+import type { Brand, Model } from './types.js';
 
 type MojoDOM = Awaited<ReturnType<NodeResponse['html']>>;
 
@@ -30,6 +32,7 @@ export class TwdbClient {
   #minInterval: number;
   #lastRequestAt = 0;
   #queue: Promise<unknown> = Promise.resolve();
+  #brands?: Brand[];
 
   constructor(opts: TwdbClientOptions) {
     this.#ua = new UserAgent({
@@ -91,6 +94,23 @@ export class TwdbClient {
       throw new HttpError(`GET ${path} -> ${res.statusCode}`, res.statusCode);
     }
     return res.text();
+  }
+
+  /** All TWDB brands (scraped from the create form's cat_id <select>), cached per client. */
+  async listBrands(): Promise<Brand[]> {
+    if (!this.#brands) this.#brands = parseBrandOptions(await this.fetchHtml('/typewriter_edit.php?id=0'));
+    return this.#brands;
+  }
+
+  /** Resolve a brand name to its TWDB record (case-insensitive), or null. */
+  async resolveBrand(name: string): Promise<Brand | null> {
+    const n = name.trim().toLowerCase();
+    return (await this.listBrands()).find((b) => b.name.toLowerCase() === n) ?? null;
+  }
+
+  /** Models for a brand (from mfr.<catId>.model_list). Option value is an opaque composite id. */
+  async listModels(brandId: string): Promise<Model[]> {
+    return parseModelOptions(await this.fetchHtml(`/mfr.${brandId}.model_list`));
   }
 
   /** Export the live cookie jar so a caller can persist the session (no password). */
