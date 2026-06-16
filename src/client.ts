@@ -1,9 +1,10 @@
 // src/client.ts
 import UserAgent, { type NodeResponse } from '@mojojs/user-agent';
 import { CookieJar, type SerializedCookieJar } from 'tough-cookie';
-import { AuthError, HttpError } from './errors.js';
-import { parseBrandOptions, parseModelOptions } from './parse.js';
-import type { Brand, Model } from './types.js';
+import { AuthError, HttpError, TwdbValidationError } from './errors.js';
+import { parseBrandOptions, parseModelOptions, parseCreateResult } from './parse.js';
+import { resizeForGallery, resizeForTypeSample } from './resize.js';
+import type { Brand, Model, MachineInput, MachineRef, ResizedImage } from './types.js';
 
 type MojoDOM = Awaited<ReturnType<NodeResponse['html']>>;
 
@@ -55,6 +56,23 @@ export class TwdbClient {
     const result = this.#queue.then(run, run);
     this.#queue = result.then(() => undefined, () => undefined);
     return result;
+  }
+
+  /** POST multipart/form-data: text fields + file parts (image bytes wrapped as Blobs, since the
+   *  user-agent's formData `content` is string|Blob, not Buffer). Routed through #send for pacing. */
+  #postMultipart(
+    path: string,
+    data: { fields: Record<string, string>; files?: Record<string, ResizedImage> },
+  ) {
+    const formData: Record<string, string | { content: Blob; filename: string }> = { ...data.fields };
+    for (const [key, f] of Object.entries(data.files ?? {})) {
+      // Fresh Uint8Array so the Blob part is ArrayBuffer-backed (Buffer's backing is ArrayBufferLike).
+      formData[key] = {
+        content: new Blob([new Uint8Array(f.content)], { type: f.contentType }),
+        filename: f.filename,
+      };
+    }
+    return this.#send(() => this.#ua.post(path, { formData }));
   }
 
   /** Access the underlying undici transport's cookie jar. */
@@ -111,6 +129,55 @@ export class TwdbClient {
   /** Models for a brand (from mfr.<catId>.model_list). Option value is an opaque composite id. */
   async listModels(brandId: string): Promise<Model[]> {
     return parseModelOptions(await this.fetchHtml(`/mfr.${brandId}.model_list`));
+  }
+
+  /** Create a new machine gallery (id=0). Resolves brand/model, resizes images, submits the form. */
+  createMachine(input: MachineInput): Promise<MachineRef> {
+    return this.#submitMachine('0', input);
+  }
+
+  /** Update an existing machine gallery (id=N). Caller passes a full MachineInput. */
+  updateMachine(id: string, input: MachineInput): Promise<MachineRef> {
+    return this.#submitMachine(id, input);
+  }
+
+  async #submitMachine(id: string, input: MachineInput): Promise<MachineRef> {
+    const brand = typeof input.brand === 'string' ? await this.resolveBrand(input.brand) : input.brand;
+    if (!brand) throw new TwdbValidationError(`Unknown brand: ${String(input.brand)}`);
+
+    const fields: Record<string, string> = {
+      site_id: '1',
+      gallery_active: '1',
+      id,
+      collection: input.collection,
+      cat_id: brand.id,
+      gallery_name: input.year,
+      serial_no: input.serialNo,
+      gallery_desc: input.description,
+      photo_wm: input.watermark === false ? '0' : '1',
+      submit: '1',
+    };
+
+    // Existing model → `models` (its composite id); a new name → `model`.
+    if (typeof input.model === 'string') {
+      const name = input.model;
+      const existing = (await this.listModels(brand.id)).find(
+        (m) => m.name.toLowerCase() === name.toLowerCase(),
+      );
+      if (existing) fields.models = existing.id;
+      else fields.model = name;
+    } else {
+      fields.models = input.model.id;
+    }
+
+    const files: Record<string, ResizedImage> = {};
+    if (input.coverImage) files.photo = await resizeForGallery(input.coverImage);
+    if (input.typeSampleImage) files.typesample = await resizeForTypeSample(input.typeSampleImage);
+
+    const res = await this.#postMultipart('/typewriter_edit.php', { fields, files });
+    const ref = parseCreateResult(await res.html());
+    if (!ref) throw new TwdbValidationError('TWDB did not return a gallery id (the form was likely rejected)');
+    return ref;
   }
 
   /** Export the live cookie jar so a caller can persist the session (no password). */
