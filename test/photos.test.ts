@@ -3,7 +3,6 @@ import { describe, it, expect, afterEach } from 'vitest';
 import sharp from 'sharp';
 import { startMockServer, type MockServer } from './helpers/mockServer.js';
 import { TwdbClient } from '../src/client.js';
-import { TwdbValidationError } from '../src/errors.js';
 
 const tinyPng = (): Promise<Buffer> =>
   sharp({ create: { width: 4, height: 4, channels: 3, background: '#aaa' } }).png().toBuffer();
