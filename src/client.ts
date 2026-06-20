@@ -2,9 +2,9 @@
 import UserAgent, { type NodeResponse } from '@mojojs/user-agent';
 import { CookieJar, type SerializedCookieJar } from 'tough-cookie';
 import { AuthError, HttpError, TwdbValidationError } from './errors.js';
-import { parseBrandOptions, parseModelOptions, parseCreateResult } from './parse.js';
+import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList } from './parse.js';
 import { resizeForGallery, resizeForTypeSample } from './resize.js';
-import type { Brand, Model, MachineInput, MachineRef, ResizedImage } from './types.js';
+import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef } from './types.js';
 
 type MojoDOM = Awaited<ReturnType<NodeResponse['html']>>;
 
@@ -178,6 +178,11 @@ export class TwdbClient {
     const ref = parseCreateResult(await res.html());
     if (!ref) throw new TwdbValidationError('TWDB did not return a gallery id (the form was likely rejected)');
     return ref;
+  }
+
+  /** List a gallery's photos (ids + stored image URLs). */
+  async listMachinePhotos(galleryId: string): Promise<PhotoRef[]> {
+    return parsePhotoList(await this.fetchHtml(`/typewriter_editor_photos.php?gallery_id=${galleryId}`));
   }
 
   /** Export the live cookie jar so a caller can persist the session (no password). */
