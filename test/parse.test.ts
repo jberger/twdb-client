@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import DOM from '@mojojs/dom';
-import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList, parsePhotoIds } from '../src/parse.js';
+import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList, parsePhotoIds, parseLinks } from '../src/parse.js';
 
 const tree = (file: string) => new DOM(readFileSync(`fixtures/${file}`, 'utf8'));
 
@@ -43,5 +43,15 @@ describe('parsePhotoList', () => {
 describe('parsePhotoIds', () => {
   it('returns the gp_id of each photo edit form (ignoring the add form)', () => {
     expect(parsePhotoIds(tree('photos-list.html'))).toEqual(['192579', '192580']);
+  });
+});
+
+describe('parseLinks', () => {
+  it('parses saved links (id from confirmLinkDelete, name+url from the anchor), ignoring tab nav', () => {
+    const links = parseLinks(readFileSync('fixtures/links-list.html', 'utf8'));
+    expect(links).toEqual([
+      { id: '7001', name: 'My blog post', url: 'https://example.com/blog/molle' },
+      { id: '7002', name: 'YouTube', url: 'https://youtube.com/watch?v=abc' },
+    ]);
   });
 });

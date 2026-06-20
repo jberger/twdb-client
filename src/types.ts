@@ -57,3 +57,10 @@ export interface UpdatePhotoOptions {
   publish?: boolean;
   image?: ImageSource;
 }
+
+/** An external link on a TWDB machine. `id` is TWDB's weblink id (used for delete). */
+export interface WebLink {
+  id: string;
+  name: string;
+  url: string;
+}
