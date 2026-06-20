@@ -5,6 +5,7 @@ import type { Brand, Model, MachineRef, PhotoRef, WebLink } from './types.js';
 interface DomNode {
   attr: Record<string, string>;
   text(): string;
+  at(selector: string): DomNode | null;
 }
 export interface DomLike {
   find(selector: string): DomNode[];
@@ -53,20 +54,21 @@ export function parsePhotoIds(dom: DomLike): string[] {
   return ids;
 }
 
-// Links: each saved link is a list row with a `target="_blank"` anchor (url + name text) followed
-// by a `confirmLinkDelete(<id>)` delete control. We parse on the raw HTML because the id and url
-// live in sibling anchors (the minimal DomLike can't traverse siblings). The <li>-scoped pattern
-// requiring BOTH a target=_blank anchor and a confirmLinkDelete skips the tab-nav <li>s.
-export function parseLinks(html: string): WebLink[] {
+// Links: each saved link is a list row (<li>) holding the link anchor (url + name) and a separate
+// delete control `<a href="javascript:confirmLinkDelete(<id>)">`. We walk each <li> with the DOM
+// and pull both anchors; rows without both (the tab-nav <li>s) are skipped. The only regex is
+// pulling the numeric id out of the confirmLinkDelete(...) JS call — not HTML parsing.
+export function parseLinks(dom: DomLike): WebLink[] {
   const links: WebLink[] = [];
-  // Anchor attrs matched order-independently ([^>]* within the open tag) so markup drift
-  // (reordered attrs, an added rel="noopener", etc.) doesn't silently drop links.
-  const re =
-    /<li[^>]*>\s*<a\s+[^>]*href="([^"]+)"[^>]*target="_blank"[^>]*>([\s\S]*?)<\/a>[\s\S]*?confirmLinkDelete\((\d+)\)/gi;
-  for (const m of html.matchAll(re)) {
-    const url = m[1];
-    const name = m[2].replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim();
-    links.push({ id: m[3], name, url });
+  for (const li of dom.find('li')) {
+    const link = li.at('a[target="_blank"]');
+    const del = li.at('a[href^="javascript:confirmLinkDelete"]');
+    if (!link || !del) continue;
+    const id = (del.attr.href ?? '').match(/confirmLinkDelete\((\d+)\)/)?.[1];
+    if (!id) continue;
+    // text() leaves the layout-padding &nbsp; entities literal; normalize them to spaces.
+    const name = link.text().replace(/&nbsp;/gi, ' ').trim();
+    links.push({ id, name, url: link.attr.href ?? '' });
   }
   return links;
 }

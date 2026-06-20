@@ -48,7 +48,7 @@ describe('parsePhotoIds', () => {
 
 describe('parseLinks', () => {
   it('parses saved links (id from confirmLinkDelete, name+url from the anchor), ignoring tab nav', () => {
-    const links = parseLinks(readFileSync('fixtures/links-list.html', 'utf8'));
+    const links = parseLinks(tree('links-list.html'));
     expect(links).toEqual([
       { id: '7001', name: 'My blog post', url: 'https://example.com/blog/molle' },
       { id: '7002', name: 'YouTube', url: 'https://youtube.com/watch?v=abc' },
