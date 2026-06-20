@@ -22,3 +22,22 @@ describe('listLinks', () => {
     ]);
   });
 });
+
+describe('setLinks', () => {
+  it('adds missing links and deletes extras, leaving matches untouched', async () => {
+    const client = await authedClient();
+    // Current (from fixture): blog (7001), youtube (7002).
+    // Desired: keep youtube, add a new wiki link, drop the blog.
+    await client.setLinks('25748', [
+      { name: 'YouTube', url: 'https://youtube.com/watch?v=abc' },
+      { name: 'Wiki', url: 'https://example.com/wiki' },
+    ]);
+    // Added exactly the wiki link:
+    expect(server.linkCreates).toHaveLength(1);
+    expect(server.linkCreates[0]).toMatchObject({
+      sub_app: 'typewriter', sub_id: '25748', link_name: 'Wiki', link_url: 'https://example.com/wiki',
+    });
+    // Deleted exactly the blog link (id 7001):
+    expect(server.linkDeletes).toEqual(['/delete.weblink?id=7001']);
+  });
+});

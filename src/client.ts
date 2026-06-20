@@ -185,6 +185,33 @@ export class TwdbClient {
     return parseLinks(await this.fetchHtml(`/typewriter_editor_links.php?gallery_id=${galleryId}`));
   }
 
+  #addLink(galleryId: string, name: string, url: string) {
+    return this.#send(() =>
+      this.#ua.post('/create.weblink', {
+        form: { sub_app: 'typewriter', sub_id: galleryId, link_name: name, link_url: url, submit: '1' },
+      }),
+    );
+  }
+
+  #deleteLink(linkId: string) {
+    return this.fetchText(`/delete.weblink?id=${linkId}`);
+  }
+
+  /** Reconcile a gallery's links to exactly `links` (matched by URL): add missing, delete extras,
+   *  leave matches untouched. Idempotent. */
+  async setLinks(galleryId: string, links: { name: string; url: string }[]): Promise<void> {
+    const norm = (u: string) => u.trim();
+    const current = await this.listLinks(galleryId);
+    const currentUrls = new Set(current.map((l) => norm(l.url)));
+    const desiredUrls = new Set(links.map((l) => norm(l.url)));
+    for (const l of links) {
+      if (!currentUrls.has(norm(l.url))) await this.#addLink(galleryId, l.name, l.url);
+    }
+    for (const c of current) {
+      if (!desiredUrls.has(norm(c.url))) await this.#deleteLink(c.id);
+    }
+  }
+
   /** List a gallery's photos (ids + stored image URLs). */
   async listMachinePhotos(galleryId: string): Promise<PhotoRef[]> {
     return parsePhotoList(await this.fetchHtml(`/typewriter_editor_photos.php?gallery_id=${galleryId}`));
