@@ -41,3 +41,16 @@ describe('addPhoto', () => {
     expect(fields.photo_active).toBe('1');
   });
 });
+
+describe('updatePhoto', () => {
+  it('posts the gp_id + fields to the edit endpoint', async () => {
+    const client = await authedClient();
+    await client.updatePhoto('25286', '192579', { description: 'Updated caption', publish: false });
+    const fields = server.photoEdits.at(-1)!;
+    expect(fields.gp_id).toBe('192579');
+    expect(fields.gallery_id).toBe('25286');
+    expect(fields.photo_desc).toBe('Updated caption');
+    expect(fields.photo_active).toBe('0');
+    expect(fields.photo_wm).toBe('1');
+  });
+});

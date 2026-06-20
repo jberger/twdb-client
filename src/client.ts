@@ -4,7 +4,7 @@ import { CookieJar, type SerializedCookieJar } from 'tough-cookie';
 import { AuthError, HttpError, TwdbValidationError } from './errors.js';
 import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList } from './parse.js';
 import { resizeForGallery, resizeForTypeSample } from './resize.js';
-import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef, AddPhotoOptions, ImageSource } from './types.js';
+import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef, AddPhotoOptions, UpdatePhotoOptions, ImageSource } from './types.js';
 
 type MojoDOM = Awaited<ReturnType<NodeResponse['html']>>;
 
@@ -208,6 +208,21 @@ export class TwdbClient {
     // gp_id is a global autoincrement → the just-added photo is the numerically largest.
     const newest = photos.reduce((a, b) => (Number(b.photoId) > Number(a.photoId) ? b : a));
     return { photoId: newest.photoId };
+  }
+
+  /** Edit a photo's description / flags, optionally replacing its image. See UpdatePhotoOptions. */
+  async updatePhoto(galleryId: string, photoId: string, opts: UpdatePhotoOptions = {}): Promise<void> {
+    const fields: Record<string, string> = {
+      site_id: '1',
+      gp_id: photoId,
+      gallery_id: galleryId,
+      photo_desc: opts.description ?? '',
+      photo_wm: opts.watermark === false ? '0' : '1',
+      photo_active: opts.publish === false ? '0' : '1',
+      submit: '1',
+    };
+    const files = opts.image ? { photo: await resizeForGallery(opts.image) } : undefined;
+    await this.#postMultipart('/typewriter_photo_edit.php', { fields, files });
   }
 
   /** Export the live cookie jar so a caller can persist the session (no password). */

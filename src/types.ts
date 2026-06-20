@@ -47,3 +47,13 @@ export interface AddPhotoOptions {
   watermark?: boolean;
   publish?: boolean;
 }
+
+/** Options for editing a photo. NOTE: this submits photo_desc/watermark/published each call
+ *  (the TWDB edit form is not a partial update) — pass `description` to avoid clearing it.
+ *  Defaults preserve watermark + published. Provide `image` to replace the photo bytes. */
+export interface UpdatePhotoOptions {
+  description?: string;
+  watermark?: boolean;
+  publish?: boolean;
+  image?: ImageSource;
+}
