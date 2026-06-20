@@ -1,5 +1,5 @@
 // src/parse.ts -- all TWDB HTML selectors live here (one place to fix on upstream drift).
-import type { Brand, Model, MachineRef, PhotoRef, WebLink } from './types.js';
+import type { Brand, Model, MachineRef, PhotoRef, WebLink, RemoteMachine } from './types.js';
 
 // Structural shape of a @mojojs/dom node — what res.html() returns, and what tests build.
 interface DomNode {
@@ -84,4 +84,28 @@ export function parseCreateResult(dom: DomLike, finalUrl = ''): MachineRef | nul
     if (m) return { id: m[1], url: href };
   }
   return null;
+}
+
+// Hunter export: GET typewriter_list_ajax.php?hunter_search=<id>&output=csv → a TAB-delimited table
+// (despite "csv"). Map by header name so column-order drift doesn't break us.
+export function parseHunterCsv(csv: string): RemoteMachine[] {
+  const lines = csv.split(/\r?\n/).filter((l) => l.length > 0);
+  if (lines.length < 2) return [];
+  const cols = lines[0].split('\t');
+  const at = (row: string[], name: string) => row[cols.indexOf(name)] ?? '';
+  const out: RemoteMachine[] = [];
+  for (const line of lines.slice(1)) {
+    const r = line.split('\t');
+    out.push({
+      id: at(r, 'id'),
+      url: at(r, 'twdb_url'),
+      manufacturer: at(r, 'manufacturer'),
+      model: at(r, 'model'),
+      serial: at(r, 'serial'),
+      year: at(r, 'year'),
+      status: at(r, 'status'),
+      photoCount: Number(at(r, 'images')) || 0,
+    });
+  }
+  return out;
 }

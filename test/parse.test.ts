@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import DOM from '@mojojs/dom';
-import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList, parsePhotoIds, parseLinks } from '../src/parse.js';
+import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList, parsePhotoIds, parseLinks, parseHunterCsv } from '../src/parse.js';
 
 const tree = (file: string) => new DOM(readFileSync(`fixtures/${file}`, 'utf8'));
 
@@ -53,5 +53,23 @@ describe('parseLinks', () => {
       { id: '7001', name: 'My blog post', url: 'https://example.com/blog/molle' },
       { id: '7002', name: 'YouTube', url: 'https://youtube.com/watch?v=abc' },
     ]);
+  });
+});
+
+describe('parseHunterCsv', () => {
+  it('parses the TAB-delimited export by header (order-independent)', () => {
+    const machines = parseHunterCsv(readFileSync('fixtures/02-list-7773.csv', 'utf8'));
+    expect(machines.length).toBeGreaterThan(0);
+    const remington = machines.find((m) => m.id === '25059')!;
+    expect(remington).toMatchObject({
+      id: '25059',
+      manufacturer: 'Remington',
+      model: 'Portable 2',
+      serial: 'NM89031',
+      year: '1928',
+      status: 'Sightings',
+      photoCount: 7,
+      url: 'https://typewriterdatabase.com/1928-remington-portable-2.25059.typewriter',
+    });
   });
 });

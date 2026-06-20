@@ -64,3 +64,16 @@ export interface WebLink {
   name: string;
   url: string;
 }
+
+/** A machine as listed in the public hunter export. `status` is reported verbatim
+ *  ('My Collection' | 'Parting Out' | 'Sightings'); consumers own the mapping. */
+export interface RemoteMachine {
+  id: string;
+  url: string;
+  manufacturer: string;
+  model: string;
+  serial: string;
+  year: string;
+  status: string;
+  photoCount: number;
+}
