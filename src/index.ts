@@ -19,6 +19,8 @@ export type {
   Collection,
   ImageSource,
   PhotoRef,
+  RemoteMachine,
   ResizedImage,
   UpdatePhotoOptions,
+  WebLink,
 } from './types.js';
