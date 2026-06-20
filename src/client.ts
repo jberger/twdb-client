@@ -2,7 +2,7 @@
 import UserAgent, { type NodeResponse } from '@mojojs/user-agent';
 import { CookieJar, type SerializedCookieJar } from 'tough-cookie';
 import { AuthError, HttpError, TwdbValidationError } from './errors.js';
-import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList } from './parse.js';
+import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList, parsePhotoIds } from './parse.js';
 import { resizeForGallery, resizeForTypeSample } from './resize.js';
 import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef, AddPhotoOptions, UpdatePhotoOptions, ImageSource } from './types.js';
 
@@ -201,13 +201,13 @@ export class TwdbClient {
     };
     const files = { photo: await resizeForGallery(image) };
     const res = await this.#postMultipart('/typewriter_photo_create.php', { fields, files });
-    const photos = parsePhotoList(await res.html());
-    if (photos.length === 0) {
+    const ids = parsePhotoIds(await res.html());
+    if (ids.length === 0) {
       throw new TwdbValidationError('TWDB did not return a photo id (the upload was likely rejected)');
     }
     // gp_id is a global autoincrement → the just-added photo is the numerically largest.
-    const newest = photos.reduce((a, b) => (Number(b.photoId) > Number(a.photoId) ? b : a));
-    return { photoId: newest.photoId };
+    const photoId = ids.reduce((a, b) => (Number(b) > Number(a) ? b : a));
+    return { photoId };
   }
 
   /** Delete a photo from a gallery (TWDB's delete is a GET). */

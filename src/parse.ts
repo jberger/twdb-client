@@ -41,6 +41,18 @@ export function parsePhotoList(dom: DomLike): PhotoRef[] {
   return photos;
 }
 
+// New-photo detection: the create response lists every photo as an edit form with a hidden
+// gp_id input. We read those ids directly — addPhoto can't use parsePhotoList there because a
+// freshly-uploaded photo has a transient image URL of a different shape.
+export function parsePhotoIds(dom: DomLike): string[] {
+  const ids: string[] = [];
+  for (const input of dom.find('input[name="gp_id"]')) {
+    const v = (input.attr.value ?? '').trim();
+    if (v) ids.push(v);
+  }
+  return ids;
+}
+
 // New gallery id/url from the create response: prefer the resolved/redirected URL, else any
 // <id>.typewriter anchor. (Confirm against a real create — see the Slice 2 plan, Task 8.)
 export function parseCreateResult(dom: DomLike, finalUrl = ''): MachineRef | null {

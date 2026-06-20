@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import DOM from '@mojojs/dom';
-import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList } from '../src/parse.js';
+import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList, parsePhotoIds } from '../src/parse.js';
 
 const tree = (file: string) => new DOM(readFileSync(`fixtures/${file}`, 'utf8'));
 
@@ -37,5 +37,11 @@ describe('parsePhotoList', () => {
       { photoId: '192579', url: 'https://typewriterdatabase.com/img/g25286_192579_1744222359.jpg' },
       { photoId: '192580', url: 'https://typewriterdatabase.com/img/g25286_192580_1744222360.jpg' },
     ]);
+  });
+});
+
+describe('parsePhotoIds', () => {
+  it('returns the gp_id of each photo edit form (ignoring the add form)', () => {
+    expect(parsePhotoIds(tree('photos-list.html'))).toEqual(['192579', '192580']);
   });
 });

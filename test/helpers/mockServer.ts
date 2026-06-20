@@ -124,8 +124,14 @@ export async function startMockServer(): Promise<MockServer> {
         photoCreates.push(mpFields(body));
         res.writeHead(200, { 'content-type': 'text/html' });
         res.end(`<html><body>
-          <img src="https://typewriterdatabase.com/img/g25286_192579_1.jpg" />
-          <img src="https://typewriterdatabase.com/img/g25286_999999_2.jpg" />
+          <form action="typewriter_photo_edit.php">
+            <input name="gp_id" value="192579" />
+            <img src="https://typewriterdatabase.com/img/g25286_192579_1744222359.jpg" />
+          </form>
+          <form action="typewriter_photo_edit.php">
+            <input name="gp_id" value="999999" />
+            <img src="https://typewriterdatabase.com/img/g25286_999999__999999_1781919743.jpg" />
+          </form>
         </body></html>`);
       });
       return;
