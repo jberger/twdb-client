@@ -25,6 +25,17 @@ describe('listMyMachines / findMachine', () => {
     expect(m?.id).toBe('25059');
   });
 
+  it('findMachine ignores spaces/dashes in the serial', async () => {
+    server = await startMockServer();
+    // Fixture serial is 'NM89031'; these spaced/dashed variants should still match.
+    for (const serial of ['NM-89031', 'NM 89031', 'nm-890 31']) {
+      const m = await client().findMachine('7773', {
+        manufacturer: 'Remington', model: 'Portable 2', serial,
+      });
+      expect(m?.id).toBe('25059');
+    }
+  });
+
   it('findMachine returns null when no machine matches', async () => {
     server = await startMockServer();
     const m = await client().findMachine('7773', { manufacturer: 'Nope', model: 'Nope' });

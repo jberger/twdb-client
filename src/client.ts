@@ -275,13 +275,16 @@ export class TwdbClient {
     criteria: { manufacturer: string; model: string; serial?: string },
   ): Promise<RemoteMachine | null> {
     const norm = (s: string) => s.trim().toLowerCase();
+    // Serials are written inconsistently with spaces/dashes ("NM-89031", "NM 89031", "nm89031"),
+    // so strip those too when matching — but NOT for model (spaces are meaningful: "Portable 2").
+    const normSerial = (s: string) => s.toLowerCase().replace(/[\s-]/g, '');
     const machines = await this.listMyMachines(hunterId);
     return (
       machines.find(
         (m) =>
           norm(m.manufacturer) === norm(criteria.manufacturer) &&
           norm(m.model) === norm(criteria.model) &&
-          (criteria.serial === undefined || norm(m.serial) === norm(criteria.serial)),
+          (criteria.serial === undefined || normSerial(m.serial) === normSerial(criteria.serial)),
       ) ?? null
     );
   }
