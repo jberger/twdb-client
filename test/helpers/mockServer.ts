@@ -10,6 +10,8 @@ export interface MockServer {
   photoCreates: Record<string, string>[]; // multipart text fields of each create POST
   photoEdits: Record<string, string>[]; // multipart text fields of each edit POST
   photoDeletes: string[]; // request URLs of each delete GET
+  linkCreates: Record<string, string>[]; // urlencoded fields of each create.weblink POST
+  linkDeletes: string[]; // request URLs of each delete.weblink GET
   close: () => Promise<void>;
 }
 
@@ -43,6 +45,8 @@ export async function startMockServer(): Promise<MockServer> {
   const photoCreates: Record<string, string>[] = [];
   const photoEdits: Record<string, string>[] = [];
   const photoDeletes: string[] = [];
+  const linkCreates: Record<string, string>[] = [];
+  const linkDeletes: string[] = [];
 
   const server = http.createServer((req, res) => {
     userAgents.push(req.headers['user-agent'] ?? '');
@@ -154,6 +158,31 @@ export async function startMockServer(): Promise<MockServer> {
       return;
     }
 
+    // Links editor page (auth required).
+    if (req.method === 'GET' && url.pathname === '/typewriter_editor_links.php') {
+      if (!authed) { res.writeHead(200, { 'content-type': 'text/html' }); res.end(LOGIN_FORM); return; }
+      res.writeHead(200, { 'content-type': 'text/html' }); res.end(fixture('links-list.html'));
+      return;
+    }
+
+    // Add weblink (urlencoded). Capture fields, reply OK.
+    if (req.method === 'POST' && url.pathname === '/create.weblink') {
+      let body = ''; req.on('data', (c) => (body += c));
+      req.on('end', () => {
+        const params = new URLSearchParams(body);
+        linkCreates.push(Object.fromEntries(params.entries()));
+        res.writeHead(200, { 'content-type': 'text/html' }); res.end('<html><body>Link saved.</body></html>');
+      });
+      return;
+    }
+
+    // Delete weblink: record the URL, reply OK.
+    if (req.method === 'GET' && url.pathname === '/delete.weblink') {
+      linkDeletes.push(req.url ?? '');
+      res.writeHead(200, { 'content-type': 'text/html' }); res.end('<html><body>Deleted.</body></html>');
+      return;
+    }
+
     res.writeHead(404); res.end('not found');
   });
 
@@ -166,6 +195,8 @@ export async function startMockServer(): Promise<MockServer> {
     photoCreates,
     photoEdits,
     photoDeletes,
+    linkCreates,
+    linkDeletes,
     close: () => new Promise<void>((resolve) => server.close(() => resolve())),
   };
 }
