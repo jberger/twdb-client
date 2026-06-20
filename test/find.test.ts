@@ -20,7 +20,7 @@ describe('listMyMachines / findMachine', () => {
   it('findMachine matches on manufacturer + model + serial', async () => {
     server = await startMockServer();
     const m = await client().findMachine('7773', {
-      manufacturer: 'remington', model: 'portable 2', serial: 'NM89031',
+      manufacturer: 'remington', model: 'portable 2', serial: 'nm89031',
     });
     expect(m?.id).toBe('25059');
   });
