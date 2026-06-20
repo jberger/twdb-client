@@ -223,7 +223,7 @@ describe('listLinks', () => {
 ```ts
   /** List a gallery's external links. */
   async listLinks(galleryId: string): Promise<WebLink[]> {
-    return parseLinks(await this.fetchText(`/typewriter_editor_links.php?gallery_id=${galleryId}`));
+    return parseLinks(await this.fetchHtml(`/typewriter_editor_links.php?gallery_id=${galleryId}`));
   }
 ```
 
