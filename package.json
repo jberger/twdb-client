@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "description": "A polite, typed client for the Typewriter Database (typewriterdatabase.com)",
   "license": "MIT",
+  "author": "Joel Berger",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jberger/twdb-client.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jberger/twdb-client/issues"
+  },
+  "homepage": "https://github.com/jberger/twdb-client#readme",
   "type": "module",
   "exports": {
     ".": {
