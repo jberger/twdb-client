@@ -11,11 +11,14 @@ export {
 } from './errors.js';
 export { resizeForGallery, resizeForTypeSample } from './resize.js';
 export type {
+  AddPhotoOptions,
   MachineInput,
   MachineRef,
   Brand,
   Model,
   Collection,
   ImageSource,
+  PhotoRef,
   ResizedImage,
+  UpdatePhotoOptions,
 } from './types.js';
