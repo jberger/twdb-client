@@ -2,9 +2,9 @@
 import UserAgent, { type NodeResponse } from '@mojojs/user-agent';
 import { CookieJar, type SerializedCookieJar } from 'tough-cookie';
 import { AuthError, HttpError, TwdbValidationError } from './errors.js';
-import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList, parsePhotoIds } from './parse.js';
+import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList, parsePhotoIds, parseLinks } from './parse.js';
 import { resizeForGallery, resizeForTypeSample } from './resize.js';
-import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef, AddPhotoOptions, UpdatePhotoOptions, ImageSource } from './types.js';
+import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef, AddPhotoOptions, UpdatePhotoOptions, ImageSource, WebLink } from './types.js';
 
 type MojoDOM = Awaited<ReturnType<NodeResponse['html']>>;
 
@@ -178,6 +178,11 @@ export class TwdbClient {
     const ref = parseCreateResult(await res.html());
     if (!ref) throw new TwdbValidationError('TWDB did not return a gallery id (the form was likely rejected)');
     return ref;
+  }
+
+  /** List a gallery's external links. */
+  async listLinks(galleryId: string): Promise<WebLink[]> {
+    return parseLinks(await this.fetchHtml(`/typewriter_editor_links.php?gallery_id=${galleryId}`));
   }
 
   /** List a gallery's photos (ids + stored image URLs). */
