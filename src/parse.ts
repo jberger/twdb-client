@@ -1,5 +1,5 @@
 // src/parse.ts -- all TWDB HTML selectors live here (one place to fix on upstream drift).
-import type { Brand, Model, MachineRef } from './types.js';
+import type { Brand, Model, MachineRef, PhotoRef } from './types.js';
 
 // Structural shape of a @mojojs/dom node — what res.html() returns, and what tests build.
 interface DomNode {
@@ -27,6 +27,19 @@ export const parseBrandOptions = (dom: DomLike): Brand[] =>
 // Models: GET mfr.<catId>.model_list returns a BARE <option> list (no <select>). The value is an
 // opaque composite (e.g. "Remington.Portable+2.42.bmys"), used verbatim as the `models` field.
 export const parseModelOptions = (dom: DomLike): Model[] => options(dom, 'option');
+
+// Photos: each stored image URL embeds the gp_id (/img/g<gid>_<gp_id>_<ts>.ext). We read the
+// gallery's photos straight off those <img> srcs — self-contained identity, no per-form nesting
+// needed (and the empty add form has no such <img>, so it's naturally excluded).
+export function parsePhotoList(dom: DomLike): PhotoRef[] {
+  const photos: PhotoRef[] = [];
+  for (const img of dom.find('img')) {
+    const src = (img.attr.src ?? '').trim();
+    const m = src.match(/\/img\/g\d+_(\d+)_\d+\.\w+/i);
+    if (m) photos.push({ photoId: m[1], url: src });
+  }
+  return photos;
+}
 
 // New gallery id/url from the create response: prefer the resolved/redirected URL, else any
 // <id>.typewriter anchor. (Confirm against a real create — see the Slice 2 plan, Task 8.)

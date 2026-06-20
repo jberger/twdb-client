@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import DOM from '@mojojs/dom';
-import { parseBrandOptions, parseModelOptions, parseCreateResult } from '../src/parse.js';
+import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList } from '../src/parse.js';
 
 const tree = (file: string) => new DOM(readFileSync(`fixtures/${file}`, 'utf8'));
 
@@ -27,5 +27,15 @@ describe('parse', () => {
   it('falls back to a .typewriter anchor href', () => {
     const dom = new DOM("<a href='https://x/foo.25748.typewriter'>see</a>");
     expect(parseCreateResult(dom, 'https://x/edit')?.id).toBe('25748');
+  });
+});
+
+describe('parsePhotoList', () => {
+  it('returns photoId + url for each existing photo, ignoring the add form', () => {
+    const photos = parsePhotoList(tree('photos-list.html'));
+    expect(photos).toEqual([
+      { photoId: '192579', url: 'https://typewriterdatabase.com/img/g25286_192579_1744222359.jpg' },
+      { photoId: '192580', url: 'https://typewriterdatabase.com/img/g25286_192580_1744222360.jpg' },
+    ]);
   });
 });

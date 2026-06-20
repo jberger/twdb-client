@@ -34,3 +34,9 @@ export interface MachineRef {
   id: string;
   url: string;
 }
+
+/** A photo in a TWDB gallery. `photoId` is TWDB's gp_id; `url` is the stored image URL. */
+export interface PhotoRef {
+  photoId: string;
+  url: string;
+}
