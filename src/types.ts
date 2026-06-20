@@ -40,3 +40,10 @@ export interface PhotoRef {
   photoId: string;
   url: string;
 }
+
+/** Options for adding a photo. Defaults: watermark on, published. */
+export interface AddPhotoOptions {
+  description?: string;
+  watermark?: boolean;
+  publish?: boolean;
+}

@@ -4,7 +4,7 @@ import { CookieJar, type SerializedCookieJar } from 'tough-cookie';
 import { AuthError, HttpError, TwdbValidationError } from './errors.js';
 import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList } from './parse.js';
 import { resizeForGallery, resizeForTypeSample } from './resize.js';
-import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef } from './types.js';
+import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef, AddPhotoOptions, ImageSource } from './types.js';
 
 type MojoDOM = Awaited<ReturnType<NodeResponse['html']>>;
 
@@ -183,6 +183,31 @@ export class TwdbClient {
   /** List a gallery's photos (ids + stored image URLs). */
   async listMachinePhotos(galleryId: string): Promise<PhotoRef[]> {
     return parsePhotoList(await this.fetchHtml(`/typewriter_editor_photos.php?gallery_id=${galleryId}`));
+  }
+
+  /** Add a photo to a gallery. Resizes, uploads, and returns the new TWDB photo id. */
+  async addPhoto(
+    galleryId: string,
+    image: ImageSource,
+    opts: AddPhotoOptions = {},
+  ): Promise<{ photoId: string }> {
+    const fields: Record<string, string> = {
+      site_id: '1',
+      gallery_id: galleryId,
+      photo_desc: opts.description ?? '',
+      photo_wm: opts.watermark === false ? '0' : '1',
+      photo_active: opts.publish === false ? '0' : '1',
+      submit: '1',
+    };
+    const files = { photo: await resizeForGallery(image) };
+    const res = await this.#postMultipart('/typewriter_photo_create.php', { fields, files });
+    const photos = parsePhotoList(await res.html());
+    if (photos.length === 0) {
+      throw new TwdbValidationError('TWDB did not return a photo id (the upload was likely rejected)');
+    }
+    // gp_id is a global autoincrement → the just-added photo is the numerically largest.
+    const newest = photos.reduce((a, b) => (Number(b.photoId) > Number(a.photoId) ? b : a));
+    return { photoId: newest.photoId };
   }
 
   /** Export the live cookie jar so a caller can persist the session (no password). */
