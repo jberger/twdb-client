@@ -15,6 +15,8 @@ export interface TwdbClientOptions {
   minRequestIntervalMs?: number;
   /** passed to @mojojs/user-agent; null disables keep-alive -- use in tests for speed */
   keepAlive?: number | null;
+  /** Backoff between transient-5xx GET retries, ms. Default 250. */
+  retryBackoffMs?: number;
 }
 
 export interface SerializedSession {
@@ -31,6 +33,7 @@ const DEFAULT_UA = 'twdb-client/0.1 (+github:jberger/twdb-client)';
 export class TwdbClient {
   #ua: UserAgent;
   #minInterval: number;
+  #retryBackoffMs: number;
   #lastRequestAt = 0;
   #queue: Promise<unknown> = Promise.resolve();
   #brands?: Brand[];
@@ -43,6 +46,7 @@ export class TwdbClient {
       keepAlive: opts.keepAlive,
     });
     this.#minInterval = opts.minRequestIntervalMs ?? 1000;
+    this.#retryBackoffMs = opts.retryBackoffMs ?? 250;
   }
 
   /** Serialize requests and enforce the minimum interval between them. */
@@ -56,6 +60,16 @@ export class TwdbClient {
     const result = this.#queue.then(run, run);
     this.#queue = result.then(() => undefined, () => undefined);
     return result;
+  }
+
+  /** GET with a bounded retry on transient 5xx (3 attempts). Mutations are NOT retried. */
+  async #get(path: string) {
+    const maxAttempts = 3;
+    for (let attempt = 1; ; attempt++) {
+      const res = await this.#send(() => this.#ua.get(path));
+      if (res.statusCode < 500 || attempt >= maxAttempts) return res;
+      if (this.#retryBackoffMs > 0) await new Promise((r) => setTimeout(r, this.#retryBackoffMs * attempt));
+    }
   }
 
   /** POST multipart/form-data: text fields + file parts (image bytes wrapped as Blobs, since the
@@ -98,7 +112,7 @@ export class TwdbClient {
 
   /** GET `path` and return its parsed HTML DOM (@mojojs/dom). Throws HttpError on non-2xx. */
   async fetchHtml(path: string): Promise<MojoDOM> {
-    const res = await this.#send(() => this.#ua.get(path));
+    const res = await this.#get(path);
     if (!res.isSuccess) {
       throw new HttpError(`GET ${path} -> ${res.statusCode}`, res.statusCode);
     }
@@ -107,7 +121,7 @@ export class TwdbClient {
 
   /** GET `path` and return the raw response body text. Throws HttpError on non-2xx. */
   async fetchText(path: string): Promise<string> {
-    const res = await this.#send(() => this.#ua.get(path));
+    const res = await this.#get(path);
     if (!res.isSuccess) {
       throw new HttpError(`GET ${path} -> ${res.statusCode}`, res.statusCode);
     }

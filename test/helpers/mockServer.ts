@@ -47,6 +47,7 @@ export async function startMockServer(): Promise<MockServer> {
   const photoDeletes: string[] = [];
   const linkCreates: Record<string, string>[] = [];
   const linkDeletes: string[] = [];
+  let flakyHits = 0;
 
   const server = http.createServer((req, res) => {
     userAgents.push(req.headers['user-agent'] ?? '');
@@ -188,6 +189,16 @@ export async function startMockServer(): Promise<MockServer> {
       res.writeHead(200, { 'content-type': 'text/plain' }); res.end(fixture('02-list-7773.csv'));
       return;
     }
+
+    // Flaky: 503 on the first hit, 200 thereafter (for retry tests).
+    if (req.method === 'GET' && url.pathname === '/flaky') {
+      flakyHits += 1;
+      if (flakyHits === 1) { res.writeHead(503); res.end('busy'); return; }
+      res.writeHead(200, { 'content-type': 'text/html' }); res.end('<html><body>ok</body></html>');
+      return;
+    }
+    // Always-500 (for exhausted-retry test).
+    if (req.method === 'GET' && url.pathname === '/down') { res.writeHead(500); res.end('down'); return; }
 
     res.writeHead(404); res.end('not found');
   });
