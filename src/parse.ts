@@ -66,8 +66,9 @@ export function parseLinks(dom: DomLike): WebLink[] {
     if (!link || !del) continue;
     const id = (del.attr.href ?? '').match(/confirmLinkDelete\((\d+)\)/)?.[1];
     if (!id) continue;
-    // text() leaves the layout-padding &nbsp; entities literal; normalize them to spaces.
-    const name = link.text().replace(/&nbsp;/gi, ' ').trim();
+    // text() may leave the layout-padding nbsp as the literal &nbsp; entity OR as U+00A0;
+    // normalize both to spaces.
+    const name = link.text().replace(/&nbsp;|\u00a0/gi, " ").trim();
     links.push({ id, name, url: link.attr.href ?? '' });
   }
   return links;
