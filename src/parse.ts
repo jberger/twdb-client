@@ -59,8 +59,10 @@ export function parsePhotoIds(dom: DomLike): string[] {
 // requiring BOTH a target=_blank anchor and a confirmLinkDelete skips the tab-nav <li>s.
 export function parseLinks(html: string): WebLink[] {
   const links: WebLink[] = [];
+  // Anchor attrs matched order-independently ([^>]* within the open tag) so markup drift
+  // (reordered attrs, an added rel="noopener", etc.) doesn't silently drop links.
   const re =
-    /<li[^>]*>\s*<a\s+href="([^"]+)"\s+target="_blank">([\s\S]*?)<\/a>[\s\S]*?confirmLinkDelete\((\d+)\)/gi;
+    /<li[^>]*>\s*<a\s+[^>]*href="([^"]+)"[^>]*target="_blank"[^>]*>([\s\S]*?)<\/a>[\s\S]*?confirmLinkDelete\((\d+)\)/gi;
   for (const m of html.matchAll(re)) {
     const url = m[1];
     const name = m[2].replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim();
