@@ -7,6 +7,9 @@ export interface MockServer {
   url: string;
   userAgents: string[]; // UA header seen on each request, in order
   requestTimes: number[]; // ms timestamp of each request
+  photoCreates: Record<string, string>[]; // multipart text fields of each create POST
+  photoEdits: Record<string, string>[]; // multipart text fields of each edit POST
+  photoDeletes: string[]; // request URLs of each delete GET
   close: () => Promise<void>;
 }
 
@@ -25,10 +28,21 @@ const mpField = (body: string, name: string): string => {
   const m = body.match(new RegExp(`name="${name}"\\r?\\n\\r?\\n([\\s\\S]*?)\\r?\\n--`, 'i'));
   return m ? m[1].trim() : '';
 };
+// All text fields of a multipart body, as a map (test-grade).
+const mpFields = (body: string): Record<string, string> => {
+  const out: Record<string, string> = {};
+  for (const m of body.matchAll(/name="([^"]+)"\r?\n\r?\n([\s\S]*?)\r?\n--/g)) {
+    out[m[1]] = m[2].trim();
+  }
+  return out;
+};
 
 export async function startMockServer(): Promise<MockServer> {
   const userAgents: string[] = [];
   const requestTimes: number[] = [];
+  const photoCreates: Record<string, string>[] = [];
+  const photoEdits: Record<string, string>[] = [];
+  const photoDeletes: string[] = [];
 
   const server = http.createServer((req, res) => {
     userAgents.push(req.headers['user-agent'] ?? '');
@@ -96,6 +110,44 @@ export async function startMockServer(): Promise<MockServer> {
       return;
     }
 
+    // Gallery photos page (auth required).
+    if (req.method === 'GET' && url.pathname === '/typewriter_editor_photos.php') {
+      if (!authed) { res.writeHead(200, { 'content-type': 'text/html' }); res.end(LOGIN_FORM); return; }
+      res.writeHead(200, { 'content-type': 'text/html' }); res.end(fixture('photos-list.html'));
+      return;
+    }
+
+    // Add photo: capture fields, reply with a photos page whose newest gp_id (max) is 999999.
+    if (req.method === 'POST' && url.pathname === '/typewriter_photo_create.php') {
+      let body = ''; req.on('data', (c) => (body += c));
+      req.on('end', () => {
+        photoCreates.push(mpFields(body));
+        res.writeHead(200, { 'content-type': 'text/html' });
+        res.end(`<html><body>
+          <img src="https://typewriterdatabase.com/img/g25286_192579_1.jpg" />
+          <img src="https://typewriterdatabase.com/img/g25286_999999_2.jpg" />
+        </body></html>`);
+      });
+      return;
+    }
+
+    // Edit photo: capture fields, reply OK.
+    if (req.method === 'POST' && url.pathname === '/typewriter_photo_edit.php') {
+      let body = ''; req.on('data', (c) => (body += c));
+      req.on('end', () => {
+        photoEdits.push(mpFields(body));
+        res.writeHead(200, { 'content-type': 'text/html' }); res.end('<html><body>Saved.</body></html>');
+      });
+      return;
+    }
+
+    // Delete photo: record the URL, reply OK.
+    if (req.method === 'GET' && url.pathname === '/typewriter_photo_delete.php') {
+      photoDeletes.push(req.url ?? '');
+      res.writeHead(200, { 'content-type': 'text/html' }); res.end('<html><body>Deleted.</body></html>');
+      return;
+    }
+
     res.writeHead(404); res.end('not found');
   });
 
@@ -105,6 +157,9 @@ export async function startMockServer(): Promise<MockServer> {
     url: `http://127.0.0.1:${port}`,
     userAgents,
     requestTimes,
+    photoCreates,
+    photoEdits,
+    photoDeletes,
     close: () => new Promise<void>((resolve) => server.close(() => resolve())),
   };
 }
