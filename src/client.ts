@@ -210,6 +210,11 @@ export class TwdbClient {
     return { photoId: newest.photoId };
   }
 
+  /** Delete a photo from a gallery (TWDB's delete is a GET). */
+  async deletePhoto(galleryId: string, photoId: string): Promise<void> {
+    await this.fetchText(`/typewriter_photo_delete.php?id=${galleryId}&gp_id=${photoId}`);
+  }
+
   /** Edit a photo's description / flags, optionally replacing its image. See UpdatePhotoOptions. */
   async updatePhoto(galleryId: string, photoId: string, opts: UpdatePhotoOptions = {}): Promise<void> {
     const fields: Record<string, string> = {

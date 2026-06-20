@@ -54,3 +54,11 @@ describe('updatePhoto', () => {
     expect(fields.photo_wm).toBe('1');
   });
 });
+
+describe('deletePhoto', () => {
+  it('GETs the delete endpoint with id + gp_id', async () => {
+    const client = await authedClient();
+    await client.deletePhoto('25286', '192579');
+    expect(server.photoDeletes.at(-1)).toBe('/typewriter_photo_delete.php?id=25286&gp_id=192579');
+  });
+});
