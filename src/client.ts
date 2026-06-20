@@ -2,9 +2,9 @@
 import UserAgent, { type NodeResponse } from '@mojojs/user-agent';
 import { CookieJar, type SerializedCookieJar } from 'tough-cookie';
 import { AuthError, HttpError, TwdbValidationError } from './errors.js';
-import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList, parsePhotoIds, parseLinks } from './parse.js';
+import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList, parsePhotoIds, parseLinks, parseHunterCsv } from './parse.js';
 import { resizeForGallery, resizeForTypeSample } from './resize.js';
-import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef, AddPhotoOptions, UpdatePhotoOptions, ImageSource, WebLink } from './types.js';
+import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef, AddPhotoOptions, UpdatePhotoOptions, ImageSource, WebLink, RemoteMachine } from './types.js';
 
 type MojoDOM = Awaited<ReturnType<NodeResponse['html']>>;
 
@@ -260,6 +260,30 @@ export class TwdbClient {
     };
     const files = opts.image ? { photo: await resizeForGallery(opts.image) } : undefined;
     await this.#postMultipart('/typewriter_photo_edit.php', { fields, files });
+  }
+
+  /** All of a hunter's machines from the public export (no login required). */
+  async listMyMachines(hunterId: string): Promise<RemoteMachine[]> {
+    return parseHunterCsv(
+      await this.fetchText(`/typewriter_list_ajax.php?hunter_search=${hunterId}&output=csv`),
+    );
+  }
+
+  /** Find a hunter's machine by manufacturer + model (+ serial if given), case-insensitive. */
+  async findMachine(
+    hunterId: string,
+    criteria: { manufacturer: string; model: string; serial?: string },
+  ): Promise<RemoteMachine | null> {
+    const norm = (s: string) => s.trim().toLowerCase();
+    const machines = await this.listMyMachines(hunterId);
+    return (
+      machines.find(
+        (m) =>
+          norm(m.manufacturer) === norm(criteria.manufacturer) &&
+          norm(m.model) === norm(criteria.model) &&
+          (criteria.serial === undefined || norm(m.serial) === norm(criteria.serial)),
+      ) ?? null
+    );
   }
 
   /** Export the live cookie jar so a caller can persist the session (no password). */

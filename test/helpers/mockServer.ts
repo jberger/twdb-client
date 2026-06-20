@@ -183,6 +183,12 @@ export async function startMockServer(): Promise<MockServer> {
       return;
     }
 
+    // Public hunter export (CSV/TAB). No login required.
+    if (req.method === 'GET' && url.pathname === '/typewriter_list_ajax.php' && url.searchParams.get('output') === 'csv') {
+      res.writeHead(200, { 'content-type': 'text/plain' }); res.end(fixture('02-list-7773.csv'));
+      return;
+    }
+
     res.writeHead(404); res.end('not found');
   });
 
