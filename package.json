@@ -1,6 +1,6 @@
 {
   "name": "@joelberger/twdb-client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A polite, typed client for the Typewriter Database (typewriterdatabase.com)",
   "license": "MIT",
   "author": "Joel Berger",
@@ -24,6 +24,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "prepare": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
     "recon": "tsx scripts/recon.ts",
