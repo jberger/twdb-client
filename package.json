@@ -1,6 +1,6 @@
 {
   "name": "@joelberger/twdb-client",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A polite, typed client for the Typewriter Database (typewriterdatabase.com)",
   "license": "MIT",
   "author": "Joel Berger",
@@ -17,6 +17,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./validate": {
+      "types": "./dist/validate.d.ts",
+      "import": "./dist/validate.js"
     }
   },
   "files": [
