@@ -12,4 +12,7 @@ describe('TwdbClient baseUrl', () => {
   it('rejects plaintext http for a non-local host (credentials are POSTed)', () => {
     expect(() => new TwdbClient({ baseUrl: 'http://typewriterdatabase.com' })).toThrow();
   });
+  it('allows an https remote', () => {
+    expect(() => new TwdbClient({ baseUrl: 'https://example.com' })).not.toThrow();
+  });
 });
