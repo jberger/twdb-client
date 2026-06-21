@@ -75,23 +75,17 @@ describe('createMachine / updateMachine', () => {
 });
 
 describe('createMachine year validation', () => {
-  it('rejects a non-conforming year (and never reaches the network)', async () => {
-    const server = await startMockServer();
-    try {
-      const client = new TwdbClient({ baseUrl: server.url, keepAlive: null });
-      await client.login('good', 'secret');
-      await expect(
-        client.createMachine({
-          collection: 'My Collection',
-          brand: 'Remington',
-          model: 'Portable 2',
-          year: '1970s',
-          serialNo: 'X1',
-          description: 'desc',
-        }),
-      ).rejects.toBeInstanceOf(TwdbValidationError);
-    } finally {
-      await server.close();
-    }
+  it('rejects a non-conforming year (fail-fast, before any network call)', async () => {
+    const c = newClient();
+    await expect(
+      c.createMachine({
+        collection: 'My Collection',
+        brand: 'Remington',
+        model: 'Portable 2',
+        year: '1970s',
+        serialNo: 'X1',
+        description: 'desc',
+      }),
+    ).rejects.toBeInstanceOf(TwdbValidationError);
   });
 });
