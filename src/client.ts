@@ -29,7 +29,7 @@ interface UndiciTransportLike {
   cookieJar: CookieJar | null;
 }
 
-const DEFAULT_UA = 'twdb-client/0.1 (+github:jberger/twdb-client)';
+const DEFAULT_UA = 'twdb-client/0.2 (+github:jberger/twdb-client)';
 const DEFAULT_BASE_URL = 'https://typewriterdatabase.com';
 
 export class TwdbClient {

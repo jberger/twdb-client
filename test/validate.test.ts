@@ -19,7 +19,7 @@ describe('isValidTwdbYear', () => {
 
   it('accepts plausible years up to the current year, incl. overlapping x-ranges', () => {
     const thisYear = String(new Date().getFullYear());
-    for (const y of ['1800', '1874', thisYear, '18xx', '19xx', '20xx', '200x'])
+    for (const y of ['1800', '1874', thisYear, '18xx', '19xx', '20xx', '200x', '1xxx', '2xxx'])
       expect(isValidTwdbYear(y)).toBe(true);
   });
 });

@@ -73,6 +73,7 @@ const twdb2 = TwdbClient.fromSession(session); // also defaults to https://typew
 - `listLinks(galleryId)`, `setLinks(galleryId, [{ name, url }])`
 - `listMyMachines(hunterId)`, `findMachine(hunterId, { manufacturer, model, serial? })`
 - `listBrands()`, `resolveBrand(name)`, `listModels(brandId)`
+- `isValidTwdbYear(year)` — true for a TWDB-format year: a 4-digit year or a trailing-`x` form (`197x`, `19xx`), within the plausible range (~1800 to the current year). `createMachine`/`updateMachine` enforce this and reject otherwise.
 
 Images (`ImageSource` = path | Buffer | stream) are resized to TWDB's limits before upload.
 Transient `5xx` responses on reads are retried with a bounded backoff; mutations are not retried.
