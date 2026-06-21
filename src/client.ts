@@ -3,6 +3,7 @@ import UserAgent, { type NodeResponse } from '@mojojs/user-agent';
 import { CookieJar, type SerializedCookieJar } from 'tough-cookie';
 import { AuthError, HttpError, TwdbValidationError } from './errors.js';
 import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList, parsePhotoIds, parseLinks, parseHunterCsv } from './parse.js';
+import { isValidTwdbYear } from './validate.js';
 import { resizeForGallery, resizeForTypeSample } from './resize.js';
 import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef, AddPhotoOptions, UpdatePhotoOptions, ImageSource, WebLink, RemoteMachine } from './types.js';
 
@@ -156,6 +157,11 @@ export class TwdbClient {
   }
 
   async #submitMachine(id: string, input: MachineInput): Promise<MachineRef> {
+    if (!isValidTwdbYear(input.year)) {
+      throw new TwdbValidationError(
+        `Invalid TWDB year "${input.year}" — use a 4-digit year or trailing x (e.g. 1928 or 197x)`,
+      );
+    }
     const brand = typeof input.brand === 'string' ? await this.resolveBrand(input.brand) : input.brand;
     if (!brand) throw new TwdbValidationError(`Unknown brand: ${String(input.brand)}`);
 
