@@ -10,7 +10,7 @@ import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef, Ad
 type MojoDOM = Awaited<ReturnType<NodeResponse['html']>>;
 
 export interface TwdbClientOptions {
-  baseUrl: string;
+  baseUrl?: string;
   userAgent?: string;
   /** Minimum ms between requests (politeness). Default 1000. */
   minRequestIntervalMs?: number;
@@ -30,6 +30,7 @@ interface UndiciTransportLike {
 }
 
 const DEFAULT_UA = 'twdb-client/0.1 (+github:jberger/twdb-client)';
+const DEFAULT_BASE_URL = 'https://typewriterdatabase.com';
 
 export class TwdbClient {
   #ua: UserAgent;
@@ -39,9 +40,17 @@ export class TwdbClient {
   #queue: Promise<unknown> = Promise.resolve();
   #brands?: Brand[];
 
-  constructor(opts: TwdbClientOptions) {
+  constructor(opts: TwdbClientOptions = {}) {
+    const baseUrl = opts.baseUrl ?? DEFAULT_BASE_URL;
+    const { protocol, hostname } = new URL(baseUrl);
+    const localish = hostname === 'localhost' || hostname === '127.0.0.1';
+    if (protocol !== 'https:' && !localish) {
+      throw new Error(
+        `twdb-client: baseUrl must be https (got ${baseUrl}) — credentials are posted, so plaintext http is refused`,
+      );
+    }
     this.#ua = new UserAgent({
-      baseURL: opts.baseUrl,
+      baseURL: baseUrl,
       name: opts.userAgent ?? DEFAULT_UA,
       maxRedirects: 5,
       keepAlive: opts.keepAlive,
@@ -318,7 +327,7 @@ export class TwdbClient {
   }
 
   /** Rebuild a client from a previously exported session. */
-  static fromSession(session: SerializedSession, opts: TwdbClientOptions): TwdbClient {
+  static fromSession(session: SerializedSession, opts: TwdbClientOptions = {}): TwdbClient {
     const client = new TwdbClient(opts);
     (client.#transport()).cookieJar = CookieJar.deserializeSync(session.cookies);
     return client;

@@ -22,7 +22,7 @@ Requires Node 20.9+ (developed on Node 24).
 ```ts
 import { TwdbClient } from '@joelberger/twdb-client';
 
-const twdb = new TwdbClient({ baseUrl: 'https://typewriterdatabase.com' });
+const twdb = new TwdbClient(); // defaults to https://typewriterdatabase.com
 await twdb.login(process.env.TWDB_USERNAME!, process.env.TWDB_PASSWORD!);
 
 // Create a machine (brand/model resolved for you; images resized before upload):
@@ -59,13 +59,14 @@ Log in once and persist the session (no password storage):
 ```ts
 const session = twdb.exportSession();          // serializable (cookies only)
 // later / elsewhere:
-const twdb2 = TwdbClient.fromSession(session, { baseUrl: 'https://typewriterdatabase.com' });
+const twdb2 = TwdbClient.fromSession(session); // also defaults to https://typewriterdatabase.com
 ```
 
 ## API
 
-- `new TwdbClient({ baseUrl, userAgent?, minRequestIntervalMs?, retryBackoffMs?, keepAlive? })`
-- `login(username, password)`, `exportSession()`, `TwdbClient.fromSession(session, opts)`
+- `new TwdbClient(opts?)` — all options optional; defaults to `https://typewriterdatabase.com`. Pass `baseUrl` only to point at a test server (must be `https` or `localhost`/`127.0.0.1`).
+  Options: `{ baseUrl?, userAgent?, minRequestIntervalMs?, retryBackoffMs?, keepAlive? }`
+- `login(username, password)`, `exportSession()`, `TwdbClient.fromSession(session, opts?)`
 - `createMachine(input)`, `updateMachine(id, input)`
 - `addPhoto(galleryId, image, opts?)`, `updatePhoto(galleryId, photoId, opts?)`,
   `deletePhoto(galleryId, photoId)`, `listMachinePhotos(galleryId)`
