@@ -10,6 +10,7 @@ export {
   UploadTooLargeError,
 } from './errors.js';
 export { resizeForGallery, resizeForTypeSample } from './resize.js';
+export { isValidTwdbYear } from './validate.js';
 export type {
   AddPhotoOptions,
   MachineInput,
