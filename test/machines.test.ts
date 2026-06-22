@@ -27,6 +27,13 @@ describe('brand/model resolver', () => {
     const models = await c.listModels('42');
     expect(models).toContainEqual({ id: 'Remington.Portable+2.42.bmys', name: 'Portable 2' });
   });
+
+  it('lists create-form model names (bare names from models_list)', async () => {
+    const c = newClient();
+    const names = await c.listCreateModels('42');
+    expect(names).toContain('Portable 2');
+    expect(names).not.toContain('Entered Next'); // the value="" placeholder is skipped
+  });
 });
 
 describe('createMachine / updateMachine', () => {

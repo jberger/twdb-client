@@ -156,8 +156,9 @@ export class TwdbClient {
     return parseModelOptions(await this.fetchHtml(`/mfr.${brandId}.model_list`));
   }
 
-  /** Model names the create form's `models` <select> accepts (from mfr.<catId>.models_list). */
-  async #createModelNames(brandId: string): Promise<string[]> {
+  /** Model names the create form's `models` <select> accepts (bare names from
+   *  mfr.<catId>.models_list). These — NOT the model_list composite ids — are valid `models` values. */
+  async listCreateModels(brandId: string): Promise<string[]> {
     return parseCreateModelNames(await this.fetchHtml(`/mfr.${brandId}.models_list`));
   }
 
@@ -197,7 +198,7 @@ export class TwdbClient {
     // the model_list composite id. A recognized name goes in `models`; an unrecognized one is a new
     // model, sent as `model` text with empty `models`. Both keys are sent, mirroring the real form.
     const modelName = typeof input.model === 'string' ? input.model : input.model.name;
-    const knownModels = await this.#createModelNames(brand.id);
+    const knownModels = await this.listCreateModels(brand.id);
     const matchedModel = knownModels.find((n) => n.toLowerCase() === modelName.toLowerCase());
     fields.models = matchedModel ?? '';
     fields.model = matchedModel ? '' : modelName;
