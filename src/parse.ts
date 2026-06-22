@@ -25,9 +25,24 @@ function options(dom: DomLike, selector: string): { id: string; name: string }[]
 export const parseBrandOptions = (dom: DomLike): Brand[] =>
   options(dom, 'select[name="cat_id"] option');
 
-// Models: GET mfr.<catId>.model_list returns a BARE <option> list (no <select>). The value is an
-// opaque composite (e.g. "Remington.Portable+2.42.bmys"), used verbatim as the `models` field.
+// Models (public model browser): GET mfr.<catId>.model_list returns a BARE <option> list whose
+// value is an opaque composite (e.g. "Remington.Portable+2.42.bmys"). Used for navigation/lookup —
+// NOT a valid value for the create form's `models` field (see parseCreateModelNames).
 export const parseModelOptions = (dom: DomLike): Model[] => options(dom, 'option');
+
+// Models (create form): GET mfr.<catId>.models_list feeds the create form's `models` <select>. Its
+// <option>s have NO value attribute, so the submitted value is the option TEXT (the bare model name);
+// the leading value="" option ("Entered Next") is the new-model placeholder. Returns the submittable
+// names. These are what `models` must be set to — sending a model_list composite id is rejected.
+export function parseCreateModelNames(dom: DomLike): string[] {
+  const names: string[] = [];
+  for (const opt of dom.find('option')) {
+    if (opt.attr.value !== undefined) continue; // skip the value="" "Entered Next" placeholder
+    const name = opt.text().trim();
+    if (name) names.push(name);
+  }
+  return names;
+}
 
 // Photos: each stored image URL embeds the gp_id (/img/g<gid>_<gp_id>_<ts>.ext). We read the
 // gallery's photos straight off those <img> srcs — self-contained identity, no per-form nesting
@@ -75,13 +90,16 @@ export function parseLinks(dom: DomLike): WebLink[] {
 }
 
 // New gallery id/url from the create response: prefer the resolved/redirected URL, else any
-// <id>.typewriter anchor. (Confirm against a real create — see the Slice 2 plan, Task 8.)
+// <id>.typewriter anchor. The `.typewriter` must end the path segment — `(?![\w-])` rejects the
+// site-chrome "Popular Models" link `popular.0.typewriter-models`, which otherwise false-matches as
+// gallery id "0" and silently turns a failed create into a fake success.
+const GALLERY_URL_RE = /(\d+)\.typewriter(?![\w-])/;
 export function parseCreateResult(dom: DomLike, finalUrl = ''): MachineRef | null {
-  const fromUrl = finalUrl.match(/(\d+)\.typewriter/);
+  const fromUrl = finalUrl.match(GALLERY_URL_RE);
   if (fromUrl) return { id: fromUrl[1], url: finalUrl };
   for (const a of dom.find('a')) {
     const href = a.attr.href ?? '';
-    const m = href.match(/(\d+)\.typewriter/);
+    const m = href.match(GALLERY_URL_RE);
     if (m) return { id: m[1], url: href };
   }
   return null;

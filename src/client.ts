@@ -2,7 +2,7 @@
 import UserAgent, { type NodeResponse } from '@mojojs/user-agent';
 import { CookieJar, type SerializedCookieJar } from 'tough-cookie';
 import { AuthError, HttpError, TwdbValidationError } from './errors.js';
-import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList, parsePhotoIds, parseLinks, parseHunterCsv } from './parse.js';
+import { parseBrandOptions, parseModelOptions, parseCreateModelNames, parseCreateResult, parsePhotoList, parsePhotoIds, parseLinks, parseHunterCsv } from './parse.js';
 import { isValidTwdbYear } from './validate.js';
 import { resizeForGallery, resizeForTypeSample } from './resize.js';
 import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef, AddPhotoOptions, UpdatePhotoOptions, ImageSource, WebLink, RemoteMachine } from './types.js';
@@ -150,9 +150,15 @@ export class TwdbClient {
     return (await this.listBrands()).find((b) => b.name.toLowerCase() === n) ?? null;
   }
 
-  /** Models for a brand (from mfr.<catId>.model_list). Option value is an opaque composite id. */
+  /** Models for a brand (from mfr.<catId>.model_list). Option value is an opaque composite id used
+   *  by the public model browser — NOT the create form's `models` value (see #createModelNames). */
   async listModels(brandId: string): Promise<Model[]> {
     return parseModelOptions(await this.fetchHtml(`/mfr.${brandId}.model_list`));
+  }
+
+  /** Model names the create form's `models` <select> accepts (from mfr.<catId>.models_list). */
+  async #createModelNames(brandId: string): Promise<string[]> {
+    return parseCreateModelNames(await this.fetchHtml(`/mfr.${brandId}.models_list`));
   }
 
   /** Create a new machine gallery (id=0). Resolves brand/model, resizes images, submits the form. */
@@ -187,25 +193,30 @@ export class TwdbClient {
       submit: '1',
     };
 
-    // Existing model → `models` (its composite id); a new name → `model`.
-    if (typeof input.model === 'string') {
-      const name = input.model;
-      const existing = (await this.listModels(brand.id)).find(
-        (m) => m.name.toLowerCase() === name.toLowerCase(),
-      );
-      if (existing) fields.models = existing.id;
-      else fields.model = name;
-    } else {
-      fields.models = input.model.id;
-    }
+    // Model: the create form's `models` <select> submits the bare model NAME (from models_list), not
+    // the model_list composite id. A recognized name goes in `models`; an unrecognized one is a new
+    // model, sent as `model` text with empty `models`. Both keys are sent, mirroring the real form.
+    const modelName = typeof input.model === 'string' ? input.model : input.model.name;
+    const knownModels = await this.#createModelNames(brand.id);
+    const matchedModel = knownModels.find((n) => n.toLowerCase() === modelName.toLowerCase());
+    fields.models = matchedModel ?? '';
+    fields.model = matchedModel ? '' : modelName;
 
     const files: Record<string, ResizedImage> = {};
     if (input.coverImage) files.photo = await resizeForGallery(input.coverImage);
     if (input.typeSampleImage) files.typesample = await resizeForTypeSample(input.typeSampleImage);
 
     const res = await this.#postMultipart('/typewriter_edit.php', { fields, files });
-    const ref = parseCreateResult(await res.html());
-    if (!ref) throw new TwdbValidationError('TWDB did not return a gallery id (the form was likely rejected)');
+    const dom = await res.html();
+    const ref = parseCreateResult(dom);
+    if (!ref) {
+      // No real gallery id in the response → TWDB rejected the form. Surface its error message
+      // (e.g. "Required fields were not filled out.") instead of fabricating a success.
+      const msg = dom.at('.alert-danger')?.text().replace(/\s+/g, ' ').trim();
+      throw new TwdbValidationError(
+        msg ? `TWDB rejected the gallery: ${msg}` : 'TWDB did not return a gallery id (the form was likely rejected)',
+      );
+    }
     return ref;
   }
 

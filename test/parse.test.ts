@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import DOM from '@mojojs/dom';
-import { parseBrandOptions, parseModelOptions, parseCreateResult, parsePhotoList, parsePhotoIds, parseLinks, parseHunterCsv } from '../src/parse.js';
+import { parseBrandOptions, parseModelOptions, parseCreateModelNames, parseCreateResult, parsePhotoList, parsePhotoIds, parseLinks, parseHunterCsv } from '../src/parse.js';
 
 const tree = (file: string) => new DOM(readFileSync(`fixtures/${file}`, 'utf8'));
 
@@ -27,6 +27,21 @@ describe('parse', () => {
   it('falls back to a .typewriter anchor href', () => {
     const dom = new DOM("<a href='https://x/foo.25748.typewriter'>see</a>");
     expect(parseCreateResult(dom, 'https://x/edit')?.id).toBe('25748');
+  });
+
+  it('does NOT match the "Popular Models" nav link (.typewriter-models) — failed create → null', () => {
+    // The create-failure page only has site chrome like popular.0.typewriter-models; treating that
+    // as gallery id "0" was the bug that fabricated a fake success. It must yield null now.
+    const dom = new DOM('<a href="https://typewriterdatabase.com/popular.0.typewriter-models">Popular Models</a>');
+    expect(parseCreateResult(dom)).toBeNull();
+    expect(parseCreateResult(dom, 'https://typewriterdatabase.com/popular.0.typewriter-models')).toBeNull();
+  });
+
+  it('parses create-form model names (value-less options), skipping the "Entered Next" placeholder', () => {
+    const names = parseCreateModelNames(tree('models-list-42.html'));
+    expect(names).toContain('Portable 2');
+    expect(names).not.toContain('Entered Next');
+    expect(names.some((n) => n === '')).toBe(false);
   });
 });
 

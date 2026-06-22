@@ -7,6 +7,7 @@ export interface MockServer {
   url: string;
   userAgents: string[]; // UA header seen on each request, in order
   requestTimes: number[]; // ms timestamp of each request
+  machineCreates: Record<string, string>[]; // multipart text fields of each create/update POST
   photoCreates: Record<string, string>[]; // multipart text fields of each create POST
   photoEdits: Record<string, string>[]; // multipart text fields of each edit POST
   photoDeletes: string[]; // request URLs of each delete GET
@@ -42,6 +43,7 @@ const mpFields = (body: string): Record<string, string> => {
 export async function startMockServer(): Promise<MockServer> {
   const userAgents: string[] = [];
   const requestTimes: number[] = [];
+  const machineCreates: Record<string, string>[] = [];
   const photoCreates: Record<string, string>[] = [];
   const photoEdits: Record<string, string>[] = [];
   const photoDeletes: string[] = [];
@@ -89,10 +91,17 @@ export async function startMockServer(): Promise<MockServer> {
       return;
     }
 
-    // Models for a brand (bare <option> list).
+    // Models for the public model browser (bare <option> list; composite-id values).
     if (req.method === 'GET' && url.pathname === '/mfr.42.model_list') {
       res.writeHead(200, { 'content-type': 'text/html' });
       res.end(fixture('model-list-42.html'));
+      return;
+    }
+
+    // Models for the CREATE form (value-less <option> list → submitted value is the bare name).
+    if (req.method === 'GET' && url.pathname === '/mfr.42.models_list') {
+      res.writeHead(200, { 'content-type': 'text/html' });
+      res.end(fixture('models-list-42.html'));
       return;
     }
 
@@ -101,11 +110,21 @@ export async function startMockServer(): Promise<MockServer> {
       let body = '';
       req.on('data', (c) => (body += c));
       req.on('end', () => {
+        machineCreates.push(mpFields(body));
         const id = mpField(body, 'id');
         const serial = mpField(body, 'serial_no');
-        if (!serial) {
+        const models = mpField(body, 'models'); // existing model = a bare name; '' = new
+        const model = mpField(body, 'model'); // new model name (used when models is empty)
+        // Mirror TWDB: a model is required, supplied EITHER as a known bare name in `models`
+        // OR as a new name in `model`. A composite id (or anything not a known name) in `models`
+        // with an empty `model` is treated as "no model" → required-fields rejection.
+        const known = ['10', '12', 'Portable 2'];
+        const hasModel = model.trim() !== '' || known.includes(models);
+        if (!serial || !hasModel) {
           res.writeHead(200, { 'content-type': 'text/html' });
-          res.end('<html><body>Error: serial number is required.</body></html>');
+          res.end(
+            '<html><body><div class="alert alert-danger">Error: Required fields were not filled out.</div></body></html>',
+          );
           return;
         }
         const gid = id && id !== '0' ? id : '25059';
@@ -209,6 +228,7 @@ export async function startMockServer(): Promise<MockServer> {
     url: `http://127.0.0.1:${port}`,
     userAgents,
     requestTimes,
+    machineCreates,
     photoCreates,
     photoEdits,
     photoDeletes,

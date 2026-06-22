@@ -89,3 +89,49 @@ describe('createMachine year validation', () => {
     ).rejects.toBeInstanceOf(TwdbValidationError);
   });
 });
+
+describe('createMachine model field (uses the create-form models_list, not the composite model_list)', () => {
+  it('sends an existing model as its bare name in `models`, with empty `model`', async () => {
+    const c = newClient();
+    await c.createMachine({
+      collection: 'My Collection',
+      brand: 'Remington',
+      model: 'Portable 2',
+      year: '1928',
+      serialNo: 'NM-EXIST',
+      description: 'd',
+    });
+    const sent = server.machineCreates.at(-1)!;
+    expect(sent.models).toBe('Portable 2'); // bare name, NOT 'Remington.Portable+2.42.bmys'
+    expect(sent.model ?? '').toBe('');
+  });
+
+  it('sends an unknown model as `model` text with empty `models` (new-model path)', async () => {
+    const c = newClient();
+    await c.createMachine({
+      collection: 'My Collection',
+      brand: 'Remington',
+      model: 'Totally New Model',
+      year: '1928',
+      serialNo: 'NM-NEW',
+      description: 'd',
+    });
+    const sent = server.machineCreates.at(-1)!;
+    expect(sent.models ?? '').toBe('');
+    expect(sent.model).toBe('Totally New Model');
+  });
+
+  it('throws TwdbValidationError surfacing the server error when the create is rejected', async () => {
+    const c = newClient();
+    await expect(
+      c.createMachine({
+        collection: 'My Collection',
+        brand: 'Remington',
+        model: 'Portable 2',
+        year: '1928',
+        serialNo: '', // server rejects → "Required fields were not filled out."
+        description: 'd',
+      }),
+    ).rejects.toThrow(/Required fields were not filled out/i);
+  });
+});
