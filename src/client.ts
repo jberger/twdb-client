@@ -2,7 +2,7 @@
 import UserAgent, { type NodeResponse } from '@mojojs/user-agent';
 import { CookieJar, type SerializedCookieJar } from 'tough-cookie';
 import { AuthError, HttpError, TwdbValidationError } from './errors.js';
-import { parseBrandOptions, parseModelOptions, parseCreateModelNames, parseCreateResult, parsePhotoList, parsePhotoIds, parseLinks, parseHunterCsv } from './parse.js';
+import { parseBrandOptions, parseModelOptions, parseCreateModelNames, parseCreateResult, parseCanonicalUrl, parsePhotoList, parsePhotoIds, parseLinks, parseHunterCsv } from './parse.js';
 import { isValidTwdbYear } from './validate.js';
 import { resizeForGallery, resizeForTypeSample } from './resize.js';
 import type { Brand, Model, MachineInput, MachineRef, ResizedImage, PhotoRef, AddPhotoOptions, UpdatePhotoOptions, ImageSource, WebLink, RemoteMachine } from './types.js';
@@ -219,6 +219,17 @@ export class TwdbClient {
       throw new TwdbValidationError(
         msg ? `TWDB rejected the gallery: ${msg}` : 'TWDB did not return a gallery id (the form was likely rejected)',
       );
+    }
+    // On create, the response only links the bare `see.<id>` form. Upgrade to the canonical public URL
+    // (`<slug>.<id>.typewriter`) from the gallery page's <link rel="canonical">. Best-effort: keep the
+    // see-url if the fetch/parse fails.
+    if (id === '0') {
+      try {
+        const canonical = parseCanonicalUrl(await this.fetchHtml(`/see.${ref.id}.typewriter`));
+        if (canonical) return { id: ref.id, url: canonical };
+      } catch {
+        /* keep ref.url */
+      }
     }
     return ref;
   }

@@ -131,6 +131,17 @@ export async function startMockServer(): Promise<MockServer> {
       return;
     }
 
+    // Gallery page (see.<id>.typewriter): carries the canonical public URL the create flow reads.
+    const seeMatch = url.pathname.match(/^\/see\.(\d+)\.typewriter$/);
+    if (req.method === 'GET' && seeMatch) {
+      const gid = seeMatch[1];
+      res.writeHead(200, { 'content-type': 'text/html' });
+      res.end(
+        `<html><head><link rel="canonical" href="https://twdb/1932-test-machine.${gid}.typewriter" /></head><body>gallery ${gid}</body></html>`,
+      );
+      return;
+    }
+
     // Gallery photos page (auth required).
     if (req.method === 'GET' && url.pathname === '/typewriter_editor_photos.php') {
       if (!authed) { res.writeHead(200, { 'content-type': 'text/html' }); res.end(LOGIN_FORM); return; }

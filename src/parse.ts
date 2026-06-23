@@ -105,6 +105,15 @@ export function parseCreateResult(dom: DomLike, finalUrl = ''): MachineRef | nul
   return null;
 }
 
+// A gallery page's canonical public URL (the descriptive `<slug>.<id>.typewriter` form), read from
+// its <link rel="canonical"> (or og:url). The create response only links the bare `see.<id>` form, so
+// we fetch the gallery page and read this to store the nice URL.
+export function parseCanonicalUrl(dom: DomLike): string | null {
+  const canonical = dom.find('link[rel="canonical"]')[0]?.attr.href;
+  if (canonical) return canonical;
+  return dom.find('meta[property="og:url"]')[0]?.attr.content ?? null;
+}
+
 // Hunter export: GET typewriter_list_ajax.php?hunter_search=<id>&output=csv → a TAB-delimited table
 // (despite "csv"). Map by header name so column-order drift doesn't break us.
 export function parseHunterCsv(csv: string): RemoteMachine[] {

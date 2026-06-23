@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import DOM from '@mojojs/dom';
-import { parseBrandOptions, parseModelOptions, parseCreateModelNames, parseCreateResult, parsePhotoList, parsePhotoIds, parseLinks, parseHunterCsv } from '../src/parse.js';
+import { parseBrandOptions, parseModelOptions, parseCreateModelNames, parseCreateResult, parseCanonicalUrl, parsePhotoList, parsePhotoIds, parseLinks, parseHunterCsv } from '../src/parse.js';
 
 const tree = (file: string) => new DOM(readFileSync(`fixtures/${file}`, 'utf8'));
 
@@ -42,6 +42,14 @@ describe('parse', () => {
     expect(names).toContain('Portable 2');
     expect(names).not.toContain('Entered Next');
     expect(names.some((n) => n === '')).toBe(false);
+  });
+
+  it('reads the canonical gallery URL from <link rel="canonical">, falling back to og:url', () => {
+    const canon = new DOM('<link rel="canonical" href="https://typewriterdatabase.com/1932-continental-klein.28339.typewriter">');
+    expect(parseCanonicalUrl(canon)).toBe('https://typewriterdatabase.com/1932-continental-klein.28339.typewriter');
+    const og = new DOM('<meta property="og:url" content="https://typewriterdatabase.com/x.5.typewriter">');
+    expect(parseCanonicalUrl(og)).toBe('https://typewriterdatabase.com/x.5.typewriter');
+    expect(parseCanonicalUrl(new DOM('<html></html>'))).toBeNull();
   });
 });
 

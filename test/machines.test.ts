@@ -50,7 +50,8 @@ describe('createMachine / updateMachine', () => {
       typeSampleImage: await tinyJpeg(),
     });
     expect(ref.id).toBe('25059');
-    expect(ref.url).toContain('.typewriter');
+    // url is upgraded from the bare see.<id> form to the canonical <slug>.<id>.typewriter
+    expect(ref.url).toBe('https://twdb/1932-test-machine.25059.typewriter');
   });
 
   it('throws TwdbValidationError when a required field is missing', async () => {
