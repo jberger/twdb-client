@@ -113,14 +113,11 @@ export async function startMockServer(): Promise<MockServer> {
         machineCreates.push(mpFields(body));
         const id = mpField(body, 'id');
         const serial = mpField(body, 'serial_no');
-        const models = mpField(body, 'models'); // existing model = a bare name; '' = new
-        const model = mpField(body, 'model'); // new model name (used when models is empty)
-        // Mirror TWDB: a model is required, supplied EITHER as a known bare name in `models`
-        // OR as a new name in `model`. A composite id (or anything not a known name) in `models`
-        // with an empty `model` is treated as "no model" → required-fields rejection.
-        const known = ['10', '12', 'Portable 2'];
-        const hasModel = model.trim() !== '' || known.includes(models);
-        if (!serial || !hasModel) {
+        // Mirror TWDB: the REQUIRED field is the `model` TEXT input. (The `models` <select> is just a
+        // picker; the live form's JS copies the chosen name into `model`.) So `models` alone — with an
+        // empty `model` — is rejected as "required fields not filled", exactly like real TWDB.
+        const model = mpField(body, 'model');
+        if (!serial || model.trim() === '') {
           res.writeHead(200, { 'content-type': 'text/html' });
           res.end(
             '<html><body><div class="alert alert-danger">Error: Required fields were not filled out.</div></body></html>',

@@ -194,14 +194,16 @@ export class TwdbClient {
       submit: '1',
     };
 
-    // Model: the create form's `models` <select> submits the bare model NAME (from models_list), not
-    // the model_list composite id. A recognized name goes in `models`; an unrecognized one is a new
-    // model, sent as `model` text with empty `models`. Both keys are sent, mirroring the real form.
+    // Model: the create form's `models` <select> (from models_list) is only a UI picker — its onchange
+    // JS copies the chosen name into the `model` TEXT field, which is the required field the server
+    // actually reads. So the model name MUST go in `model` (always); `models` mirrors the picker (the
+    // matched bare name, or '' for a new model not in the list). Use the canonical models_list spelling
+    // when matched, else the caller's name (a new model).
     const modelName = typeof input.model === 'string' ? input.model : input.model.name;
     const knownModels = await this.listCreateModels(brand.id);
     const matchedModel = knownModels.find((n) => n.toLowerCase() === modelName.toLowerCase());
     fields.models = matchedModel ?? '';
-    fields.model = matchedModel ? '' : modelName;
+    fields.model = matchedModel ?? modelName;
 
     const files: Record<string, ResizedImage> = {};
     if (input.coverImage) files.photo = await resizeForGallery(input.coverImage);

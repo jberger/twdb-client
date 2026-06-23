@@ -98,7 +98,7 @@ describe('createMachine year validation', () => {
 });
 
 describe('createMachine model field (uses the create-form models_list, not the composite model_list)', () => {
-  it('sends an existing model as its bare name in `models`, with empty `model`', async () => {
+  it('sends an existing model name in the `model` TEXT field (server reads that), and mirrors it in `models`', async () => {
     const c = newClient();
     await c.createMachine({
       collection: 'My Collection',
@@ -108,9 +108,11 @@ describe('createMachine model field (uses the create-form models_list, not the c
       serialNo: 'NM-EXIST',
       description: 'd',
     });
-    const sent = server.machineCreates.at(-1)!;
-    expect(sent.models).toBe('Portable 2'); // bare name, NOT 'Remington.Portable+2.42.bmys'
-    expect(sent.model ?? '').toBe('');
+    const sent = server.machineCreates.at(-1)!
+    // `model` (text) is the required field TWDB reads — must carry the name, NOT be empty.
+    expect(sent.model).toBe('Portable 2')
+    // `models` (the picker) mirrors it with the canonical bare name, NOT 'Remington.Portable+2.42.bmys'.
+    expect(sent.models).toBe('Portable 2')
   });
 
   it('sends an unknown model as `model` text with empty `models` (new-model path)', async () => {
