@@ -116,6 +116,19 @@ describe('createMachine model field (uses the create-form models_list, not the c
     expect(sent.models).toBe('Portable 2')
   });
 
+  it('normalizes a trailing-x year to uppercase X in gallery_name (TWDB convention)', async () => {
+    const c = newClient();
+    await c.createMachine({
+      collection: 'My Collection',
+      brand: 'Remington',
+      model: 'Portable 2',
+      year: '194x', // lowercase accepted; sent as 194X
+      serialNo: 'NM-X',
+      description: 'd',
+    });
+    expect(server.machineCreates.at(-1)!.gallery_name).toBe('194X')
+  });
+
   it('sends an unknown model as `model` text with empty `models` (new-model path)', async () => {
     const c = newClient();
     await c.createMachine({

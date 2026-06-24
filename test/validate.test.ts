@@ -6,8 +6,11 @@ describe('isValidTwdbYear', () => {
   it('accepts a 4-digit year and trailing-x decades/centuries', () => {
     for (const y of ['1928', '197x', '19xx', '1xxx']) expect(isValidTwdbYear(y)).toBe(true);
   });
+  it('accepts uppercase X (TWDB convention) and mixed case', () => {
+    for (const y of ['197X', '19XX', '1XXX', '19Xx']) expect(isValidTwdbYear(y)).toBe(true);
+  });
   it('rejects loose/non-conforming years', () => {
-    for (const y of ['1970s', 'ca. 1970', 'approx 1970', '197', '19720', 'xxxx', '197X', '', '  1928 '])
+    for (const y of ['1970s', 'ca. 1970', 'approx 1970', '197', '19720', 'xxxx', 'XXXX', '', '  1928 '])
       expect(isValidTwdbYear(y)).toBe(false);
   });
 

@@ -187,7 +187,7 @@ export class TwdbClient {
       id,
       collection: input.collection,
       cat_id: brand.id,
-      gallery_name: input.year,
+      gallery_name: input.year.replace(/x/g, 'X'), // TWDB's convention is uppercase X ("192X")
       serial_no: input.serialNo,
       gallery_desc: input.description,
       photo_wm: input.watermark === false ? '0' : '1',
