@@ -1,4 +1,7 @@
-# TWDB Uploader — desktop app design
+# FigureShift — desktop TWDB uploader design
+
+**Name:** **FigureShift** — a real typewriter/teletype key (Figure Shift / FIGS), and what the app does:
+*shifts your figures* (machines/records) up to the Typewriter Database. Repo: `figureshift`.
 
 **Date:** 2026-06-23
 **Status:** Approved (design); pending written-spec review
@@ -8,9 +11,10 @@ consumer / proving ground). See memory: [[dt-leads-app-trails]], [[twdb-uploader
 
 ## Goal
 
-A cross-platform **Electron desktop app** that lets any Typewriter Database user bulk-upload their own
-collection from a folder of photos — resizing and form-filling handled for them — with transparent,
-resumable, on-disk state. It is the **second consumer** of `twdb-client` (DT is the first).
+**FigureShift** is a cross-platform **Electron desktop app** that lets any Typewriter Database user
+bulk-upload their own collection from a folder of photos — resizing and form-filling handled for them —
+with transparent, resumable, on-disk state. It is the **second consumer** of `twdb-client` (DT is the
+first).
 
 ## Audience & north star
 
@@ -134,6 +138,6 @@ that historically bites).
 
 ## Repo note
 
-The app is its own new repo (sibling to `twdb-client`, like DT). The helper-promotion is a `twdb-client`
-change consumed by both DT and the app. (This spec lives in the `twdb-client` repo for now as the shared
-TWDB-tooling home; it moves/links to the app repo when that's created.)
+FigureShift is its own new repo (`figureshift`, sibling to `twdb-client`, like DT). The helper-promotion
+is a `twdb-client` change consumed by both DT and FigureShift. (This spec lives in the `twdb-client` repo
+for now as the shared TWDB-tooling home; it moves/links to the FigureShift repo when that's created.)
