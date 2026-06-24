@@ -122,8 +122,12 @@ that historically bites).
 4. **Push + state** — create / add-new-photos orchestration mirroring `twdbPush`, writing state.
 5. **Polish** — progress, push-all-ready, error surfacing, onboarding for non-technical users.
 
-## Out of scope (v1)
+## Out of scope (v1) / future
 
+- **Spreadsheet/Excel import (punted, likely needed eventually):** many collectors keep their collection
+  in a spreadsheet (the user did, pre-DT). But every spreadsheet differs — column names, layout, how
+  photos are referenced — so it's heuristics-on-heuristics. Revisit as a later import path that maps an
+  arbitrary sheet onto the same `machine.yaml` model the folder flow already produces.
 - Editing/deleting existing TWDB metadata or photos (re-sync) — deferred in DT too; the app catches up
   when DT does.
 - Photo reordering; acting on behalf of other users (it's single-user-local); auto-update.
