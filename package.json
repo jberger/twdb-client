@@ -1,6 +1,6 @@
 {
   "name": "@joelberger/twdb-client",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A polite, typed client for the Typewriter Database (typewriterdatabase.com)",
   "license": "MIT",
   "author": "Joel Berger",
