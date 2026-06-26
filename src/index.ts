@@ -12,8 +12,8 @@ export {
 export { resizeForGallery, resizeForTypeSample } from './resize.js';
 export { isValidTwdbYear } from './validate.js';
 export { resolveExact, suggestMatch, suggestTwdbYear } from './resolve.js';
-export { inferMachineFromPath } from './infer.js';
-export type { MachineGuess } from './infer.js';
+export { levenshtein, similarity, fuzzyBestMatch, inferMake, inferModel } from './fuzzy.js';
+export type { FuzzyMatch } from './fuzzy.js';
 export type {
   AddPhotoOptions,
   MachineInput,
