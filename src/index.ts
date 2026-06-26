@@ -11,6 +11,7 @@ export {
 } from './errors.js';
 export { resizeForGallery, resizeForTypeSample } from './resize.js';
 export { isValidTwdbYear } from './validate.js';
+export { resolveExact, suggestMatch, suggestTwdbYear } from './resolve.js';
 export type {
   AddPhotoOptions,
   MachineInput,
