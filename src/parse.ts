@@ -44,15 +44,18 @@ export function parseCreateModelNames(dom: DomLike): string[] {
   return names;
 }
 
-// Photos: each stored image URL embeds the gp_id (/img/g<gid>_<gp_id>_<ts>.ext). We read the
-// gallery's photos straight off those <img> srcs — self-contained identity, no per-form nesting
-// needed (and the empty add form has no such <img>, so it's naturally excluded).
+// Photos: each existing photo is a `typewriter_photo_edit.php` form holding the authoritative
+// `gp_id` (the id addPhoto/deletePhoto/updatePhoto use) and the photo's <img>. We read the id from
+// the input (NOT the image URL — its shape varies, e.g. g<gid>_<gp_id>__<gp_id>_<ts>, and a
+// freshly-uploaded photo's URL is transient) and the URL from the form's <img>. The empty add form
+// posts to typewriter_photo_create.php, so it's naturally excluded.
 export function parsePhotoList(dom: DomLike): PhotoRef[] {
   const photos: PhotoRef[] = [];
-  for (const img of dom.find('img')) {
-    const src = (img.attr.src ?? '').trim();
-    const m = src.match(/\/img\/g\d+_(\d+)_\d+\.\w+/i);
-    if (m) photos.push({ photoId: m[1], url: src });
+  for (const form of dom.find('form[action="typewriter_photo_edit.php"]')) {
+    const photoId = (form.at('input[name="gp_id"]')?.attr.value ?? '').trim();
+    if (!photoId) continue;
+    const url = (form.at('img')?.attr.src ?? '').trim();
+    photos.push({ photoId, url });
   }
   return photos;
 }

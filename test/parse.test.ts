@@ -61,6 +61,19 @@ describe('parsePhotoList', () => {
       { photoId: '192580', url: 'https://typewriterdatabase.com/img/g25286_192580_1744222360.jpg' },
     ]);
   });
+
+  // Real galleries can serve a double-underscore image URL (g<gid>_<gp_id>__<gp_id>_<ts>) that the
+  // old URL-regex never matched, dropping the photo. The gp_id must come from the form input (the
+  // authoritative id used by addPhoto/delete/update), not from the URL shape.
+  it('reads the gp_id from the form input regardless of the image URL shape', () => {
+    const html = `<form action="typewriter_photo_edit.php">
+      <input type="hidden" name="gp_id" value="227520" />
+      <img src="https://typewriterdatabase.com/img/g28356_227520__227520_1782525029.jpg" />
+    </form>`;
+    expect(parsePhotoList(new DOM(html))).toEqual([
+      { photoId: '227520', url: 'https://typewriterdatabase.com/img/g28356_227520__227520_1782525029.jpg' },
+    ]);
+  });
 });
 
 describe('parsePhotoIds', () => {
