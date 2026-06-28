@@ -22,6 +22,9 @@ export function suggestMatch(value: string, candidates: string[]): string {
 /** Loose, human-entered year text → a TWDB year (NNNN or trailing-X), or '' if none can be inferred. */
 export function suggestTwdbYear(loose: string | null | undefined): string {
   if (!loose) return '';
+  // An explicit trailing-X year already in TWDB form (e.g. 196X, 19XX) — honor it directly.
+  const xform = loose.match(/\b(\d{1,3}x{1,3})\b/i);
+  if (xform && /^(\d{3}x|\d{2}xx|\dxxx)$/i.test(xform[1])) return xform[1].replace(/x/gi, 'X');
   const years = new Set<number>();
 
   const abbr = /(\d{4})\s*[-–—]\s*(\d{1,3})(?!\d)/g;

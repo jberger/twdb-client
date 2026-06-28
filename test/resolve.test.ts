@@ -47,4 +47,12 @@ describe('suggestTwdbYear', () => {
   it('no shared leading digit → empty (never malformed XXXX)', () => {
     expect(suggestTwdbYear('1900-2000')).toBe('');
   });
+  it('honors explicit trailing-X year forms (196X, 19XX)', () => {
+    expect(suggestTwdbYear('Olympia SM3 195X')).toBe('195X');
+    expect(suggestTwdbYear('Royal 19XX restoration')).toBe('19XX');
+    expect(suggestTwdbYear('196x')).toBe('196X');
+  });
+  it('does not treat arbitrary digit+x tokens as years', () => {
+    expect(suggestTwdbYear('model 12x special')).toBe('');
+  });
 });
