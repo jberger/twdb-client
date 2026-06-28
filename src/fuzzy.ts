@@ -48,7 +48,9 @@ export function fuzzyBestMatch(
   const qTokens = tokenize(query);
   if (qTokens.length === 0) return null;
 
+  const EPS = 1e-9;
   let best: FuzzyMatch | null = null;
+  let bestKeyLen = 0;
   for (const cand of candidates) {
     const cKey = norm(cand);
     if (!cKey) continue;
@@ -75,7 +77,14 @@ export function fuzzyBestMatch(
     const coverage = cTokens.length ? sum / cTokens.length : 0;
 
     const score = Math.max(joined, coverage);
-    if (!best || score > best.score) best = { value: cand, score };
+    // Tie-break toward specificity: when candidates match the path equally well, prefer the one that
+    // matched MORE of it (longer normalized key) — "Smith Corona" over "Corona", "Deluxe 660TR" over
+    // "Deluxe". Safe because a longer candidate only ties when its extra tokens genuinely matched
+    // (otherwise its coverage average drops and it scores lower).
+    if (!best || score > best.score + EPS || (score > best.score - EPS && cKey.length > bestKeyLen)) {
+      best = { value: cand, score };
+      bestKeyLen = cKey.length;
+    }
   }
 
   return best && best.score >= threshold ? best : null;

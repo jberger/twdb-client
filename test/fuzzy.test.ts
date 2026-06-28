@@ -41,6 +41,23 @@ describe('inferModel (against a make’s model list)', () => {
   });
 });
 
+describe('prefers the more specific match on ties (longer wins)', () => {
+  it('does not shorten Smith Corona to Corona', () => {
+    const makes = ['Corona', 'Smith Corona', 'Royal'];
+    expect(inferMake('Smith Corona Silent 1948', makes)).toBe('Smith Corona');
+    // order-independent
+    expect(inferMake('Smith Corona Silent 1948', ['Smith Corona', 'Corona', 'Royal'])).toBe('Smith Corona');
+  });
+  it('still picks the short make when only it is in the path', () => {
+    expect(inferMake('Corona 3 typewriter 1920', ['Corona', 'Smith Corona'])).toBe('Corona');
+  });
+  it('does not shorten a model like Deluxe 660TR to Deluxe', () => {
+    const models = ['Deluxe', 'Deluxe 660TR', 'Activator'];
+    expect(inferModel('Brother Deluxe 660TR', models)).toBe('Deluxe 660TR');
+    expect(inferModel('Brother Deluxe 660TR', ['Deluxe 660TR', 'Deluxe'])).toBe('Deluxe 660TR');
+  });
+});
+
 describe('fuzzyBestMatch returns score + respects threshold', () => {
   it('returns the scored best match, or null below threshold', () => {
     const hit = fuzzyBestMatch('continental', ['Continental', 'Royal']);
