@@ -41,6 +41,16 @@ describe('inferModel (against a make’s model list)', () => {
   });
 });
 
+describe('inferMake honors built-in manufacturer aliases', () => {
+  it('maps SCM to Smith Corona (resolved against the TWDB make list)', () => {
+    expect(inferMake('SCM Galaxie 12 1965', ['Smith-Corona', 'Royal'])).toBe('Smith-Corona');
+    expect(inferMake('scm-galaxie', ['Smith-Corona', 'Royal'])).toBe('Smith-Corona');
+  });
+  it('ignores the alias when that make is not offered', () => {
+    expect(inferMake('SCM Galaxie', ['Royal', 'Olympia'])).toBe('');
+  });
+});
+
 describe('prefers the more specific match on ties (longer wins)', () => {
   it('does not shorten Smith Corona to Corona', () => {
     const makes = ['Corona', 'Smith Corona', 'Royal'];

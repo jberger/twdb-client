@@ -90,7 +90,22 @@ export function fuzzyBestMatch(
   return best && best.score >= threshold ? best : null;
 }
 
+// Common manufacturer abbreviations/nicknames that fuzzy matching alone won't catch. Keys are
+// normalized (lowercase alphanumerics); values are canonical names matched case/punctuation-
+// insensitively against the supplied make list (so a make absent from TWDB's list is ignored).
+const MAKE_ALIASES: Record<string, string> = {
+  scm: 'Smith Corona',
+};
+
 export function inferMake(relPath: string, makeNames: string[], threshold = 0.8): string {
+  // An explicit abbreviation in the path (e.g. "SCM") takes precedence over fuzzy matching.
+  for (const t of tokenize(relPath)) {
+    const canon = MAKE_ALIASES[norm(t)];
+    if (canon) {
+      const hit = makeNames.find((m) => norm(m) === norm(canon));
+      if (hit) return hit;
+    }
+  }
   return fuzzyBestMatch(relPath, makeNames, { threshold })?.value ?? '';
 }
 
