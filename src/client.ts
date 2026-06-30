@@ -316,6 +316,21 @@ export class TwdbClient {
     await this.#postMultipart('/typewriter_photo_edit.php', { fields, files });
   }
 
+  /** Set the display order of a gallery's photos. `orderedPhotoIds` are gp_ids in the desired order
+   *  (mirrors the dragsort UI, which POSTs repeated `ids[]` to the ordering-ajax endpoint). */
+  async reorderPhotos(galleryId: string, orderedPhotoIds: string[]): Promise<void> {
+    if (orderedPhotoIds.length === 0) return;
+    // Build URLSearchParams so the array sends as repeated `ids[]=` keys; mojo copies it verbatim
+    // (a plain object would collapse the array to `ids[]=a,b`).
+    const form = new URLSearchParams();
+    for (const id of orderedPhotoIds) form.append('ids[]', id);
+    await this.#send(() =>
+      this.#ua.post(`/typewriter_editor_photos_ordering_ajax.php?gallery_id=${galleryId}`, {
+        form: form as unknown as Record<string, string>,
+      }),
+    );
+  }
+
   /** All of a hunter's machines from the public export (no login required). */
   async listMyMachines(hunterId: string): Promise<RemoteMachine[]> {
     return parseHunterCsv(

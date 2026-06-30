@@ -11,6 +11,7 @@ export interface MockServer {
   photoCreates: Record<string, string>[]; // multipart text fields of each create POST
   photoEdits: Record<string, string>[]; // multipart text fields of each edit POST
   photoDeletes: string[]; // request URLs of each delete GET
+  photoOrderings: { galleryId: string; ids: string[] }[]; // each ordering POST (gallery + ids in order)
   linkCreates: Record<string, string>[]; // urlencoded fields of each create.weblink POST
   linkDeletes: string[]; // request URLs of each delete.weblink GET
   close: () => Promise<void>;
@@ -47,6 +48,7 @@ export async function startMockServer(): Promise<MockServer> {
   const photoCreates: Record<string, string>[] = [];
   const photoEdits: Record<string, string>[] = [];
   const photoDeletes: string[] = [];
+  const photoOrderings: { galleryId: string; ids: string[] }[] = [];
   const linkCreates: Record<string, string>[] = [];
   const linkDeletes: string[] = [];
   let flakyHits = 0;
@@ -186,6 +188,17 @@ export async function startMockServer(): Promise<MockServer> {
       return;
     }
 
+    // Reorder photos (urlencoded ids[] in order). Capture gallery_id + ids, reply OK.
+    if (req.method === 'POST' && url.pathname === '/typewriter_editor_photos_ordering_ajax.php') {
+      let body = ''; req.on('data', (c) => (body += c));
+      req.on('end', () => {
+        const params = new URLSearchParams(body);
+        photoOrderings.push({ galleryId: url.searchParams.get('gallery_id') ?? '', ids: params.getAll('ids[]') });
+        res.writeHead(200, { 'content-type': 'text/html' }); res.end('ok');
+      });
+      return;
+    }
+
     // Links editor page (auth required).
     if (req.method === 'GET' && url.pathname === '/typewriter_editor_links.php') {
       if (!authed) { res.writeHead(200, { 'content-type': 'text/html' }); res.end(LOGIN_FORM); return; }
@@ -240,6 +253,7 @@ export async function startMockServer(): Promise<MockServer> {
     photoCreates,
     photoEdits,
     photoDeletes,
+    photoOrderings,
     linkCreates,
     linkDeletes,
     close: () => new Promise<void>((resolve) => server.close(() => resolve())),

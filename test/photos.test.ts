@@ -28,6 +28,21 @@ describe('listMachinePhotos', () => {
   });
 });
 
+describe('reorderPhotos', () => {
+  it('posts the gp_ids in the given order as repeated ids[] params', async () => {
+    const client = await authedClient();
+    await client.reorderPhotos('28356', ['227522', '227520', '227521']);
+    const last = server.photoOrderings.at(-1)!;
+    expect(last.galleryId).toBe('28356');
+    expect(last.ids).toEqual(['227522', '227520', '227521']);
+  });
+  it('is a no-op for an empty list (no request)', async () => {
+    const client = await authedClient();
+    await client.reorderPhotos('28356', []);
+    expect(server.photoOrderings).toHaveLength(0);
+  });
+});
+
 describe('addPhoto', () => {
   it('uploads a photo and returns the new gp_id (max in the response)', async () => {
     const client = await authedClient();
